@@ -1,0 +1,265 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  name      String
+  role      String   @default("LECTURER")
+  institutionId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  institution Institution? @relation(fields: [institutionId], references: [id])
+  exams Exam[]
+  questionBankItems QuestionBankItem[]
+  notifications Notification[]
+  activityLogs ActivityLog[]
+
+  @@index([username])
+  @@index([role])
+  @@index([institutionId])
+}
+
+model QuestionBankItem {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  title     String?
+  problemStatement String?
+  constraints String?
+  inputFormat String?
+  outputFormat String?
+  sampleInput String?
+  sampleOutput String?
+  referenceSolution String?
+  questionText String?   @map("question_text")
+  marks     Int
+  tags      String?
+  options    String? // JSON string
+  correctOption String?
+  language   String?
+  starterCodeJson String? @map("starter_code_json")
+  testCasesJson String? @map("test_cases_json")
+  solution  String?
+  showTestConsole Boolean @default(false) @map("show_test_console")
+  timeLimitSec Int? @map("time_limit_sec")
+  memoryLimitMb Int? @map("memory_limit_mb")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+  testCases TestCase[]
+
+  @@index([userId])
+  @@index([type])
+  @@map("question_bank_items")
+}
+
+model Institution {
+  id       String  @id @default(uuid())
+  name     String
+  address  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users User[]
+  exams Exam[]
+}
+
+model Exam {
+  id        String   @id @default(uuid())
+  title     String
+  courseCode String?
+  description String?
+  durationMinutes Int? @map("duration_minutes") // old field
+  duration    Int? // new field used in service
+  startAt DateTime? @map("start_at") // old field
+  endAt DateTime? @map("end_at") // old field
+  startDateTime DateTime? @map("start_date_time") // new field used in service
+  endDateTime DateTime? @map("end_date_time") // new field used in service
+  allowedLanguages String? @map("allowed_languages")
+  status    String   @default("DRAFT")
+  accessCode String? @unique
+  studentPassword String? @map("student_password")
+  invigilatorPassword String? @map("invigilator_password")
+  examPassword String? @map("exam_password") // old field
+  enableMonitoring Boolean @default(false) @map("enable_monitoring")
+  shuffleQuestions Boolean @default(false) @map("shuffle_questions")
+  shuffleOptions Boolean @default(false) @map("shuffle_options")
+  lockAfterSubmit Boolean @default(false) @map("lock_after_submit")
+  showResults Boolean @default(false) @map("show_results")
+  lecturerId String
+  institutionId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lecturer User @relation(fields: [lecturerId], references: [id])
+  institution Institution? @relation(fields: [institutionId], references: [id])
+  questions Question[]
+  examSessions ExamSession[]
+  submissions Submission[]
+  activityLogs ActivityLog[]
+
+  @@index([lecturerId])
+  @@index([institutionId])
+  @@index([status])
+  @@index([accessCode])
+}
+
+model Question {
+  id        String   @id @default(uuid())
+  examId    String
+  type      String
+  title     String?
+  problemStatement String?
+  constraints String?
+  inputFormat String?
+  outputFormat String?
+  sampleInput String?
+  sampleOutput String?
+  referenceSolution String?
+  questionText String? @map("question_text")
+  marks     Int
+  position  Int? // old field
+  order     Int? // new field used in service
+  options    String? // JSON string
+  correctOption String?
+  language   String?
+  starterCodeJson String? @map("starter_code_json")
+  testCasesJson String? @map("test_cases_json")
+  solution  String?
+  showTestConsole Boolean @default(false) @map("show_test_console")
+  timeLimitSec Int? @map("time_limit_sec")
+  memoryLimitMb Int? @map("memory_limit_mb")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  exam Exam @relation(fields: [examId], references: [id])
+  testCases TestCase[]
+  submissions Submission[]
+
+  @@index([examId])
+  @@index([type])
+}
+
+model TestCase {
+  id        String   @id @default(uuid())
+  questionId String?
+  questionBankItemId String?
+  input     String
+  expectedOutput String
+  isHidden  Boolean  @default(false)
+  order     Int
+  createdAt DateTime @default(now())
+
+  question Question? @relation(fields: [questionId], references: [id])
+  questionBankItem QuestionBankItem? @relation(fields: [questionBankItemId], references: [id])
+  results Result[]
+
+  @@index([questionId])
+  @@index([questionBankItemId])
+}
+
+model ExamSession {
+  id        String   @id @default(uuid())
+  examId    String
+  studentName String
+  studentNumber String
+  referenceNumber String?
+  startedAt DateTime?
+  completedAt DateTime?
+  status    String   @default("ACTIVE")
+  warningCount Int @default(0)
+  createdAt DateTime @default(now())
+
+  exam Exam @relation(fields: [examId], references: [id])
+  submissions Submission[]
+  activityLogs ActivityLog[]
+
+  @@index([examId])
+  @@index([status])
+}
+
+model Submission {
+  id        String   @id @default(uuid())
+  examId    String
+  questionId String
+  sessionId String?
+  code      String
+  language  String
+  status    String   @default("PENDING")
+  score     Int      @default(0)
+  totalMarks Int
+  executionTime Int?
+  memoryUsage Int?
+  errorMessage String?
+  createdAt DateTime @default(now())
+
+  exam Exam @relation(fields: [examId], references: [id])
+  question Question @relation(fields: [questionId], references: [id])
+  session ExamSession? @relation(fields: [sessionId], references: [id])
+  results Result[]
+
+  @@index([examId])
+  @@index([questionId])
+  @@index([sessionId])
+  @@index([status])
+}
+
+model Result {
+  id          String   @id @default(uuid())
+  submissionId String
+  testCaseId  String
+  passed      Boolean
+  actualOutput String?
+  errorMessage String?
+  createdAt  DateTime @default(now())
+
+  submission Submission @relation(fields: [submissionId], references: [id])
+  testCase TestCase @relation(fields: [testCaseId], references: [id])
+
+  @@index([submissionId])
+  @@index([testCaseId])
+}
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  examId      String
+  sessionId   String?
+  userId      String?
+  eventType   String
+  metadata    String?
+  timestamp   DateTime    @default(now())
+
+  exam Exam @relation(fields: [examId], references: [id])
+  session ExamSession? @relation(fields: [sessionId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([examId])
+  @@index([sessionId])
+  @@index([userId])
+  @@index([eventType])
+  @@index([timestamp])
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  title       String
+  message     String
+  isRead      Boolean @default(false)
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([isRead])
+}

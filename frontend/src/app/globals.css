@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 210 20% 98%;
+  --foreground: 222 47% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 12%;
+  
+  /* Deep Blue */
+  --primary: 222 47% 15%;
+  --primary-foreground: 210 40% 98%;
+  
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222 47% 12%;
+  
+  --muted: 210 30% 94%;
+  --muted-foreground: 215 16% 47%;
+  
+  /* Cyan/Teal Accent */
+  --accent: 173 80% 36%;
+  --accent-foreground: 210 40% 98%;
+  
+  /* Success, Warning, Destructive */
+  --success: 142 76% 36%;
+  --success-foreground: 355 100% 97%;
+  --warning: 24 95% 50%;
+  --warning-foreground: 355 100% 97%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+  
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 222 47% 15%;
+  
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 222 47% 10%;
+  --foreground: 210 40% 98%;
+  --card: 222 47% 12%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222 47% 12%;
+  --popover-foreground: 210 40% 98%;
+  
+  --primary: 210 40% 98%;
+  --primary-foreground: 222 47% 12%;
+  
+  --secondary: 217 32% 17%;
+  --secondary-foreground: 210 40% 98%;
+  
+  --muted: 217 32% 15%;
+  --muted-foreground: 215 20% 65%;
+  
+  --accent: 173 80% 40%;
+  --accent-foreground: 222 47% 10%;
+  
+  --destructive: 0 62% 40%;
+  --destructive-foreground: 210 40% 98%;
+  
+  --border: 217 32% 17%;
+  --input: 217 32% 17%;
+  --ring: 210 40% 98%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', 'Poppins', sans-serif;
+  }
+}
+
