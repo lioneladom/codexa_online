@@ -41,6 +41,8 @@ interface Exam {
 
 export default function StudentExamPage({ params }: { params: { accessCode: string } }) {
   const [step, setStep] = useState<'entry' | 'exam' | 'completed'>('entry');
+  const [activeTab, setActiveTab] = useState<'questions' | 'details' | 'code'>('questions');
+  const [isQuestionsSidebarOpen, setIsQuestionsSidebarOpen] = useState(true);
   const [name, setName] = useState('');
   const [studentNumber, setStudentNumber] = useState('');
   const [password, setPassword] = useState('');
@@ -571,17 +573,17 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
       )}
 
       {/* Main Workspace Header */}
-      <header className="bg-[#0a0f24] text-white px-6 py-3 border-b border-[#1e295d] flex justify-between items-center shadow-md">
+      <header className="bg-[#0a0f24] text-white px-6 py-4 border-b border-[#1e295d] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-md">
         <div>
           <h1 className="text-lg font-bold font-sans tracking-wide text-[#ffffff]">{exam?.title}</h1>
-          <div className="flex gap-3 text-xs text-slate-400 mt-0.5 font-mono">
+          <div className="flex flex-wrap gap-2 text-xs text-slate-400 mt-0.5 font-mono">
             <span>Course: {exam?.courseCode}</span>
             <span>•</span>
             <span>Candidate: {name} ({studentNumber})</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="flex flex-wrap items-center justify-between md:justify-end gap-6 w-full md:w-auto">
           <div className="text-lg font-mono flex items-center gap-2">
             <span className="text-xs uppercase tracking-wider text-slate-400">Time Left:</span>
             <span className={`font-bold px-3 py-1 rounded-lg ${timeLeft < 300 ? 'bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse' : 'bg-[#1b2554] border border-[#2b3a7a]'}`}>
@@ -591,7 +593,7 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
           
           <button
             onClick={handleFinishExam}
-            className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-xl text-xs transition-all shadow-md"
+            className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-xl text-xs transition-all shadow-md w-full md:w-auto"
           >
             Submit Exam
           </button>
@@ -599,9 +601,15 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
       </header>
 
       {/* Workspace Panel Split */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 flex-col lg:flex-row overflow-hidden">
         {/* Left Navigator Side */}
-        <aside className="w-72 bg-[#0d1430] border-r border-[#1e295d] p-4 flex flex-col justify-between overflow-y-auto">
+        <aside
+          className={`${
+            isQuestionsSidebarOpen ? 'lg:w-72 lg:opacity-100' : 'lg:w-0 lg:opacity-0 lg:overflow-hidden lg:border-r-0'
+          } bg-[#0d1430] border-r border-[#1e295d] p-4 flex flex-col justify-between overflow-y-auto transition-all duration-300 ${
+            activeTab === 'questions' ? 'flex flex-1 w-full lg:flex-none' : 'hidden lg:flex'
+          }`}
+        >
           <div>
             <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 font-mono">Questions</h2>
             <div className="space-y-2">
@@ -619,7 +627,12 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
                 return (
                   <button
                     key={q.id}
-                    onClick={() => setCurrentQuestionIndex(idx)}
+                    onClick={() => {
+                      setCurrentQuestionIndex(idx);
+                      if (window.innerWidth < 1024) {
+                        setActiveTab('details');
+                      }
+                    }}
                     className={`w-full text-left p-3 rounded-xl transition-all flex justify-between items-center border ${
                       isActive 
                         ? 'bg-[#1b2554] border-accent text-white shadow-md' 
@@ -643,7 +656,7 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
           </div>
 
           {/* Security alerts log status */}
-          <div className="pt-4 border-t border-[#1e295d] text-xs text-slate-400">
+          <div className="pt-4 border-t border-[#1e295d] text-xs text-slate-400 mt-6">
             <div className="flex justify-between items-center">
               <span>Violations logged:</span>
               <span className={warningCount > 0 ? 'text-red-400 font-bold' : 'text-green-400'}>{warningCount}</span>
@@ -652,18 +665,67 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
         </aside>
 
         {/* Center / Right Content Panel */}
-        <main className="flex-1 flex overflow-hidden">
+        <main className="flex-1 flex flex-col overflow-hidden bg-slate-50">
+          {/* Mobile Tab Selector */}
+          <div className="flex lg:hidden bg-[#0d1430] border-b border-[#1e295d] text-slate-300 font-mono select-none flex-shrink-0">
+            <button
+              onClick={() => setActiveTab('questions')}
+              className={`flex-1 py-3 text-center text-xs font-semibold border-b-2 transition-all ${
+                activeTab === 'questions' ? 'border-accent text-white bg-[#11193a]' : 'border-transparent text-slate-400'
+              }`}
+            >
+              Questions ({exam?.questions.length || 0})
+            </button>
+            <button
+              onClick={() => setActiveTab('details')}
+              className={`flex-1 py-3 text-center text-xs font-semibold border-b-2 transition-all ${
+                activeTab === 'details' ? 'border-accent text-white bg-[#11193a]' : 'border-transparent text-slate-400'
+              }`}
+            >
+              Details
+            </button>
+            {currentQuestion && currentQuestion.type === 'PROGRAMMING' && (
+              <button
+                onClick={() => setActiveTab('code')}
+                className={`flex-1 py-3 text-center text-xs font-semibold border-b-2 transition-all ${
+                  activeTab === 'code' ? 'border-accent text-white bg-[#11193a]' : 'border-transparent text-slate-400'
+                }`}
+              >
+                Code & Run
+              </button>
+            )}
+          </div>
+
           {currentQuestion && (
-            <div className="flex-1 flex overflow-hidden">
+            <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
               
               {/* Split left side: Question description */}
-              <div className="w-1/2 p-6 overflow-y-auto border-r border-[#e2e8f0] bg-white flex flex-col justify-between">
+              <div
+                className={`w-full lg:w-1/2 p-6 overflow-y-auto border-r border-[#e2e8f0] bg-white flex flex-col justify-between ${
+                  activeTab === 'details' ? 'flex flex-1 flex-col' : 'hidden lg:flex lg:flex-col'
+                }`}
+              >
                 <div>
                   <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
-                    <h2 className="text-xl font-bold text-[#0a0f24]">
-                      Q{currentQuestionIndex + 1}: {currentQuestion.title}
-                    </h2>
-                    <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-semibold">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setIsQuestionsSidebarOpen(!isQuestionsSidebarOpen)}
+                        className="hidden lg:block text-slate-500 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                        title={isQuestionsSidebarOpen ? "Hide Questions List" : "Show Questions List"}
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          {isQuestionsSidebarOpen ? (
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                          ) : (
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                          )}
+                        </svg>
+                      </button>
+                      <h2 className="text-xl font-bold text-[#0a0f24]">
+                        Q{currentQuestionIndex + 1}: {currentQuestion.title}
+                      </h2>
+                    </div>
+                    <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-semibold flex-shrink-0">
                       {currentQuestion.marks} Marks
                     </span>
                   </div>
@@ -773,7 +835,7 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
 
                 {/* Non-programming answer submit actions */}
                 {currentQuestion.type !== 'PROGRAMMING' && (
-                  <div className="pt-4 border-t border-slate-100 flex justify-end">
+                  <div className="pt-4 border-t border-slate-100 flex justify-end mt-6">
                     <button
                       onClick={() => handleSubmitAnswer(currentQuestion)}
                       className="bg-accent hover:bg-accent/90 text-white font-semibold px-5 py-2.5 rounded-xl text-xs transition-all shadow-sm"
@@ -785,7 +847,11 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
               </div>
 
               {/* Split right side: Monaco editor / run terminal (Only for PROGRAMMING) */}
-              <div className="w-1/2 flex flex-col overflow-hidden bg-slate-900">
+              <div
+                className={`w-full lg:w-1/2 flex flex-col overflow-hidden bg-slate-900 ${
+                  activeTab === 'code' ? 'flex flex-1 flex-col' : 'hidden lg:flex lg:flex-col'
+                }`}
+              >
                 {currentQuestion.type === 'PROGRAMMING' ? (
                   <div className="flex-1 flex flex-col overflow-hidden">
                     {/* Editor header options */}
@@ -865,7 +931,7 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
                           />
                         ) : (
                           <div className="flex items-center justify-center h-full text-slate-500 text-xs font-mono">
-                            Press "Run Code" to compile and execute program in interactive console.
+                            Press &quot;Run Code&quot; to compile and execute program in interactive console.
                           </div>
                         )}
                       </div>
@@ -873,15 +939,15 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
                   </div>
                 ) : (
                   /* Non programming instruction message */
-                  <div className="flex-1 flex items-center justify-center text-slate-500 text-sm p-8 text-center">
+                  <div className="flex-1 flex items-center justify-center text-slate-500 text-sm p-8 text-center bg-slate-900">
                     <div>
                       <div className="text-4xl mb-2 flex justify-center">
                         <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </div>
-                      <p>This is a text-based input question.</p>
-                      <p className="text-xs text-slate-600 mt-1">Please provide your solution in the left editor form panels.</p>
+                      <p className="text-slate-300">This is a text-based input question.</p>
+                      <p className="text-xs text-slate-500 mt-1">Please provide your solution in the left editor response panels.</p>
                     </div>
                   </div>
                 )}
