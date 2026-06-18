@@ -25,6 +25,8 @@ export default function ExamsPage() {
   const [publishLoading, setPublishLoading] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [showStopConfirm, setShowStopConfirm] = useState<string | null>(null);
+  const [stopLoading, setStopLoading] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
@@ -100,6 +102,32 @@ export default function ExamsPage() {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleStopExam = async (examId: string) => {
+    const token = localStorage.getItem('codexa_token');
+    if (!token) return;
+    setStopLoading(examId);
+    try {
+      const res = await fetch(`${getApiUrl()}/exams/${examId}/archive`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (res.ok) {
+        setExams((prev) =>
+          prev.map((exam) =>
+            exam.id === examId ? { ...exam, status: 'ARCHIVED' } : exam
+          )
+        );
+        setShowStopConfirm(null);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setStopLoading(null);
+    }
   };
 
   const handleDeleteExam = async (examId: string) => {
@@ -261,6 +289,13 @@ export default function ExamsPage() {
                         Edit
                       </Link>
                       <button
+                        onClick={() => setShowStopConfirm(exam.id)}
+                        disabled={stopLoading !== null}
+                        className="px-4 py-2 bg-red-700 text-white rounded-md hover:bg-red-800 disabled:opacity-50 text-xs font-semibold transition-all shadow-sm"
+                      >
+                        Stop Exam
+                      </button>
+                      <button
                         onClick={() => setShowDeleteConfirm(exam.id)}
                         disabled={deleteLoading === exam.id}
                         className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 text-xs font-semibold transition-all shadow-sm"
@@ -322,6 +357,38 @@ export default function ExamsPage() {
                 className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-xl transition-all shadow-md"
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stop Confirmation Modal */}
+      {showStopConfirm && (
+        <div className="fixed inset-0 z-50 bg-[#000000]/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-[#e2e8f0]/80 rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center">
+            <div className="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-slate-900">Stop Ongoing Exam</h3>
+            <p className="text-sm text-slate-500 mt-2">
+              Are you sure you want to stop this ongoing exam? This will immediately lock the workspace for all active students and submit their current answers.
+            </p>
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => setShowStopConfirm(null)}
+                className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-xl hover:bg-slate-50 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleStopExam(showStopConfirm)}
+                disabled={stopLoading !== null}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-xl transition-all shadow-md"
+              >
+                {stopLoading === showStopConfirm ? 'Stopping...' : 'Stop Exam'}
               </button>
             </div>
           </div>
