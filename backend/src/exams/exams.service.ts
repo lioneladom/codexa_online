@@ -449,9 +449,21 @@ export class ExamsService {
         });
       }
 
-      const totalTestCases = testCasesToRun.length || 1;
-      const testCasePassRate = passedCount / totalTestCases;
-      const combinedRate = (testCasePassRate * 0.8) + (similarityRate * 0.2);
+      const totalTestCases = testCasesToRun.length;
+      let combinedRate = 0;
+      if (totalTestCases === 0) {
+        // If no test cases are defined, base the grade on semantic similarity
+        combinedRate = similarityRate;
+      } else {
+        const testCasePassRate = passedCount / totalTestCases;
+        if (testCasePassRate === 1.0) {
+          // A perfect execution match always gets full marks
+          combinedRate = 1.0;
+        } else {
+          // Otherwise, weight it: 80% test cases, 20% semantic similarity
+          combinedRate = (testCasePassRate * 0.8) + (similarityRate * 0.2);
+        }
+      }
       score = !isTestOnly ? Math.round(combinedRate * question.marks) : 0;
       details.testCases = testCaseResults;
       details.passedCount = passedCount;
