@@ -74,6 +74,12 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
     warningCountRef.current = warningCount;
   }, [warningCount]);
 
+  // Reset terminal console when switching questions
+  useEffect(() => {
+    setTerminalRunning(false);
+    setTerminalRunId(0);
+  }, [currentQuestionIndex]);
+
   // Fetch initial exam structure (anonymous access check)
   useEffect(() => {
     async function fetchExam() {
@@ -922,12 +928,14 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
                       
                       {/* Console Body */}
                       <div className="flex-1 min-h-0 relative bg-[#060814]">
-                        {terminalRunning ? (
+                        {terminalRunId > 0 ? (
                           <RunTerminal
                             code={answers[currentQuestion.id]?.code || ''}
                             language={currentQuestion.language || 'javascript'}
                             runId={terminalRunId}
                             timeLimitSec={15}
+                            isRunning={terminalRunning}
+                            onExit={() => setTerminalRunning(false)}
                           />
                         ) : (
                           <div className="flex items-center justify-center h-full text-slate-500 text-xs font-mono">
