@@ -109,63 +109,67 @@ export class AuthService {
   }
 
   private async seedUserQuestions(userId: string) {
-    const sampleQuestions = [
-      {
-        type: 'PROGRAMMING',
-        title: 'Reverse a String',
-        problemStatement: 'Write a function reverseString(str) that takes a string and returns it reversed.',
-        referenceSolution: 'function reverseString(str) { return str.split("").reverse().join(""); }',
-        language: 'javascript',
-        marks: 10,
-      },
-      {
-        type: 'PROGRAMMING',
-        title: 'Factorial Calculation',
-        problemStatement: 'Write a function factorial(n) that returns the factorial of a non-negative integer n.',
-        referenceSolution: 'def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n-1)',
-        language: 'python',
-        marks: 15,
-      },
-      {
-        type: 'MULTIPLE_CHOICE',
-        title: 'HTTP Port Number',
-        problemStatement: 'What is the default port number for secure HTTPS traffic?',
-        options: JSON.stringify(['80', '443', '8080', '22']),
-        correctOption: '443',
-        marks: 5,
-      },
-      {
-        type: 'SHORT_ANSWER',
-        title: 'SQL Primary Key Definition',
-        problemStatement: 'What SQL constraint uniquely identifies each record in a database table?',
-        correctOption: 'PRIMARY KEY',
-        marks: 5,
-      },
-      {
-        type: 'LONG_ANSWER',
-        title: 'Explain MVC Architecture',
-        problemStatement: 'Briefly explain the Model-View-Controller (MVC) software design pattern and the role of each component.',
-        referenceSolution: 'Model: Handles data and business logic. View: Manages user interface display. Controller: Handles inputs and links Model and View.',
-        marks: 10,
-      },
-      {
-        type: 'FILL_IN_THE_BLANK',
-        title: 'TCP Handshake Blanks',
-        problemStatement: 'The three packets sent during a standard TCP handshake connection are [blank], SYN-ACK, and [blank].',
-        correctOption: 'SYN, ACK',
-        marks: 10,
-      },
-    ];
+    try {
+      const sampleQuestions = [
+        {
+          type: 'PROGRAMMING',
+          title: 'Reverse a String',
+          problemStatement: 'Write a function reverseString(str) that takes a string and returns it reversed.',
+          referenceSolution: 'function reverseString(str) { return str.split("").reverse().join(""); }',
+          language: 'javascript',
+          marks: 10,
+        },
+        {
+          type: 'PROGRAMMING',
+          title: 'Factorial Calculation',
+          problemStatement: 'Write a function factorial(n) that returns the factorial of a non-negative integer n.',
+          referenceSolution: 'def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n-1)',
+          language: 'python',
+          marks: 15,
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          title: 'HTTP Port Number',
+          problemStatement: 'What is the default port number for secure HTTPS traffic?',
+          options: JSON.stringify(['80', '443', '8080', '22']),
+          correctOption: '443',
+          marks: 5,
+        },
+        {
+          type: 'SHORT_ANSWER',
+          title: 'SQL Primary Key Definition',
+          problemStatement: 'What SQL constraint uniquely identifies each record in a database table?',
+          correctOption: 'PRIMARY KEY',
+          marks: 5,
+        },
+        {
+          type: 'LONG_ANSWER',
+          title: 'Explain MVC Architecture',
+          problemStatement: 'Briefly explain the Model-View-Controller (MVC) software design pattern and the role of each component.',
+          referenceSolution: 'Model: Handles data and business logic. View: Manages user interface display. Controller: Handles inputs and links Model and View.',
+          marks: 10,
+        },
+        {
+          type: 'FILL_IN_THE_BLANK',
+          title: 'TCP Handshake Blanks',
+          problemStatement: 'The three packets sent during a standard TCP handshake connection are [blank], SYN-ACK, and [blank].',
+          correctOption: 'SYN, ACK',
+          marks: 10,
+        },
+      ];
 
-    await Promise.all(
-      sampleQuestions.map((q) =>
-        this.prisma.questionBankItem.create({
-          data: {
-            ...q,
-            userId,
-          },
-        }),
-      ),
-    );
+      await Promise.all(
+        sampleQuestions.map((q) =>
+          this.prisma.questionBankItem.create({
+            data: {
+              ...q,
+              userId,
+            },
+          }),
+        ),
+      );
+    } catch (err) {
+      console.error('Failed to seed sample questions for user:', err);
+    }
   }
 }
