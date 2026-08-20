@@ -5,67 +5,9 @@
 @tailwind utilities;
 
 /* =====================================================================
-   LIGHT MODE (Default)
+   PERMANENT DARK MODE — Deep Navy / Slate
    ===================================================================== */
 :root {
-  --background: 210 20% 98%;
-  --foreground: 222 47% 12%;
-  --card: 0 0% 100%;
-  --card-foreground: 222 47% 12%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 12%;
-
-  --primary: 222 47% 15%;
-  --primary-foreground: 210 40% 98%;
-
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222 47% 12%;
-
-  --muted: 210 30% 94%;
-  --muted-foreground: 215 16% 40%;
-
-  --accent: 20 93% 39%;
-  --accent-foreground: 0 0% 100%;
-  --tint-color: #bf4507;
-
-  --success: 142 76% 36%;
-  --success-foreground: 0 0% 100%;
-  --warning: 24 95% 50%;
-  --warning-foreground: 0 0% 100%;
-  --destructive: 0 84% 55%;
-  --destructive-foreground: 0 0% 100%;
-
-  --border: 214 32% 88%;
-  --input: 214 32% 88%;
-  --ring: 175 70% 35%;
-  --radius: 0.75rem;
-
-  /* Layout Variables - Light */
-  --sidebar-bg: #0a0f24;
-  --sidebar-text: #94a3b8;
-  --sidebar-active-bg: #1b2554;
-  --sidebar-border: #1e295d;
-  --header-bg: #ffffff;
-  --header-text: #0f172a;
-  --panel-bg: #f8fafc;
-  --panel-text: #0f172a;
-  --border-light: #e2e8f0;
-  --card-bg: #ffffff;
-  --card-text: #0f172a;
-
-  /* Editor Variables - Light */
-  --editor-bg: #ffffff;
-  --editor-fg: #0f172a;
-  --editor-gutter-bg: #f8fafc;
-  --editor-gutter-fg: #64748b;
-  --editor-border: #e2e8f0;
-  --editor-active-line: #f1f5f9;
-}
-
-/* =====================================================================
-   DARK MODE — Deep Navy / Slate with crisp text contrast
-   ===================================================================== */
-.dark {
   --background: 222 47% 7%;
   --foreground: 210 40% 96%;
   --card: 222 40% 11%;
@@ -84,10 +26,20 @@
 
   --destructive: 0 62% 45%;
   --destructive-foreground: 0 0% 98%;
+  
+  --accent: 20 93% 39%;
+  --accent-foreground: 0 0% 100%;
+  --tint-color: #bf4507;
+  
+  --success: 142 76% 36%;
+  --success-foreground: 0 0% 100%;
+  --warning: 24 95% 50%;
+  --warning-foreground: 0 0% 100%;
 
   --border: 217 30% 20%;
   --input: 217 30% 20%;
   --ring: 175 70% 45%;
+  --radius: 0.75rem;
 
   /* Layout Variables - Dark */
   --sidebar-bg: #070a16;
@@ -109,6 +61,41 @@
   --editor-gutter-fg: #64748b;
   --editor-border: #1e2a4a;
   --editor-active-line: #10162a;
+}
+
+/* =====================================================================
+   ANIMATIONS (Aurora & Ripple)
+   ===================================================================== */
+@keyframes aurora {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.bg-aurora {
+  background: linear-gradient(135deg, #030712 0%, #0a112c 25%, #150a21 50%, #0c1838 75%, #030712 100%);
+  background-size: 400% 400%;
+  animation: aurora 20s ease infinite;
+}
+
+@keyframes ripple-drop {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.ripple-effect {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(191, 69, 7, 0.4) 0%, transparent 60%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: ripple-drop 1s ease-out forwards;
 }
 
 /* =====================================================================

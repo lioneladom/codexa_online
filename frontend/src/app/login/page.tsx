@@ -14,12 +14,20 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [ripples, setRipples] = useState<{ x: number, y: number, id: number }[]>([]);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
+  const handleRipple = (e: React.MouseEvent<HTMLElement>) => {
     const { currentTarget, clientX, clientY } = e;
     const { left, top } = currentTarget.getBoundingClientRect();
-    setMousePosition({ x: clientX - left, y: clientY - top });
+    const x = clientX - left;
+    const y = clientY - top;
+    
+    const id = Date.now();
+    setRipples(prev => [...prev, { x, y, id }]);
+    
+    setTimeout(() => {
+      setRipples(prev => prev.filter(r => r.id !== id));
+    }, 1000);
   };
 
   useEffect(() => {
@@ -79,16 +87,17 @@ export default function LoginPage() {
 
   return (
     <main 
-      className="flex min-h-screen items-center justify-center p-6 bg-[#030712] text-[#f0f2f8] relative overflow-hidden"
-      onMouseMove={handleMouseMove}
+      className="flex min-h-screen items-center justify-center p-6 bg-aurora text-[#f0f2f8] relative overflow-hidden"
+      onClick={handleRipple}
     >
-      <div 
-        className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-300"
-        style={{
-          background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(191, 69, 7, 0.15), transparent 40%)`,
-        }}
-      />
-      <div className="z-10 w-full max-w-md bg-[#0c1222]/90 backdrop-blur-xl border border-[#1a2440] p-8 rounded-3xl shadow-2xl relative overflow-hidden transition-all duration-500">
+      {ripples.map(ripple => (
+        <span
+          key={ripple.id}
+          className="ripple-effect"
+          style={{ left: ripple.x, top: ripple.y, width: 100, height: 100 }}
+        />
+      ))}
+      <div className="z-10 w-full max-w-md bg-[#0c1222]/60 backdrop-blur-2xl border border-[#1a2440]/80 p-8 rounded-3xl shadow-2xl relative overflow-hidden transition-all duration-500">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-accent to-transparent opacity-70" />
         
         {/* LOGO Header */}
