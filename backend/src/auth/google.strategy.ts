@@ -24,20 +24,21 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     profile: any,
     done: VerifyCallback,
   ): Promise<any> {
-    const { name, emails } = profile;
-    const user = {
-      email: emails[0].value,
-      firstName: name.givenName,
-      lastName: name.familyName,
-      fullName: profile.displayName || `${name.givenName} ${name.familyName}`,
-      picture: profile.photos[0].value,
-      accessToken,
-    };
-    
-    // Pass the Google profile data to the auth service for handling
-    const result = await this.authService.googleLogin(user);
-    
-    // done(null, result) attaches 'result' to req.user in the controller
-    done(null, result);
+    try {
+      const { name, emails } = profile;
+      const user = {
+        email: emails[0].value,
+        firstName: name.givenName,
+        lastName: name.familyName,
+        fullName: profile.displayName || `${name.givenName} ${name.familyName}`,
+        picture: profile.photos[0].value,
+        accessToken,
+      };
+      
+      const result = await this.authService.googleLogin(user);
+      done(null, result);
+    } catch (err) {
+      done(err, null);
+    }
   }
 }
