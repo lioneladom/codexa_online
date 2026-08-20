@@ -14,6 +14,14 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const router = useRouter();
 
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
+    const { currentTarget, clientX, clientY } = e;
+    const { left, top } = currentTarget.getBoundingClientRect();
+    setMousePosition({ x: clientX - left, y: clientY - top });
+  };
+
   useEffect(() => {
     // Check if we just returned from Google OAuth
     const params = new URLSearchParams(window.location.search);
@@ -70,9 +78,18 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-6 bg-[#030712] text-[#f0f2f8]">
-      <div className="w-full max-w-md bg-[#0c1222] border border-[#1a2440] p-8 rounded-3xl shadow-2xl relative overflow-hidden group hover:shadow-[0_0_40px_-10px_hsl(var(--accent)/0.3)] hover:border-accent/50 transition-all duration-500">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-accent to-transparent opacity-70 group-hover:opacity-100 transition-opacity duration-500" />
+    <main 
+      className="flex min-h-screen items-center justify-center p-6 bg-[#030712] text-[#f0f2f8] relative overflow-hidden"
+      onMouseMove={handleMouseMove}
+    >
+      <div 
+        className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-300"
+        style={{
+          background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(191, 69, 7, 0.15), transparent 40%)`,
+        }}
+      />
+      <div className="z-10 w-full max-w-md bg-[#0c1222]/90 backdrop-blur-xl border border-[#1a2440] p-8 rounded-3xl shadow-2xl relative overflow-hidden transition-all duration-500">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-accent to-transparent opacity-70" />
         
         {/* LOGO Header */}
         <div className="text-center mb-8 flex flex-col items-center">
