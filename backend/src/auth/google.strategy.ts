@@ -6,10 +6,14 @@ import { AuthService } from './auth.service';
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   constructor(private authService: AuthService) {
+    // Sanitize callback URL in case of accidental double https:// prefix
+    const rawCallback = process.env.GOOGLE_CALLBACK_URL as string;
+    const callbackURL = rawCallback ? rawCallback.replace(/^https?:\/\/https?:\/\//, 'https://') : rawCallback;
+
     super({
       clientID: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL as string,
+      callbackURL,
       scope: ['email', 'profile'],
     });
   }
