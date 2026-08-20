@@ -9,7 +9,11 @@ export default function SettingsPage() {
   const [allowCopyPaste, setAllowCopyPaste] = useState(false);
   const [enableConsole, setEnableConsole] = useState(true);
   const [saved, setSaved] = useState(false);
-
+  
+  const [profileName, setProfileName] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     setSaved(true);
@@ -17,92 +21,136 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-8 bg-[#030712] min-h-screen text-[#f0f2f8]">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#0a0f24]">System Settings</h1>
-        <p className="text-slate-500 text-sm mt-1">Configure your offline local area network (LAN) deployment parameters.</p>
+        <h1 className="text-2xl font-bold text-white tracking-wide">System Settings</h1>
+        <p className="text-[#7b8aaa] text-sm mt-1">Configure LAN connectivity parameters and exam integrity policies.</p>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-6 max-w-2xl bg-white border border-[#e2e8f0] p-8 rounded-2xl shadow-sm">
+      <form onSubmit={handleSave} className="space-y-6 max-w-2xl">
         {saved && (
-          <div className="p-4 bg-green-50 border border-green-200 text-green-800 text-sm rounded-xl font-semibold">
+          <div className="p-4 bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-sm rounded-xl font-semibold flex items-center gap-2">
+            <svg className="w-4 h-4 flex-shrink-0 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
             Settings updated successfully!
           </div>
         )}
 
-        {/* Section 1: LAN Connectivity */}
-        <div>
-          <h2 className="text-lg font-bold text-[#0a0f24] border-b border-slate-100 pb-2 mb-4">LAN Connectivity</h2>
+        {/* Section 1: Profile Settings */}
+        <div className="bg-[#0c1222] border border-[#1a2440] rounded-2xl p-6 shadow-sm">
+          <h2 className="text-base font-bold text-white mb-1">Profile Settings</h2>
+          <p className="text-xs text-[#7b8aaa] mb-4">Update your display name and password. You must enter your current password to save these changes.</p>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs uppercase tracking-wider font-bold mb-2 text-accent">Full Name</label>
+                <input
+                  type="text"
+                  value={profileName}
+                  onChange={(e) => setProfileName(e.target.value)}
+                  placeholder="e.g. John Doe"
+                  className="w-full px-4 py-2.5 border border-[#1a2440] rounded-xl text-sm focus:outline-none focus:border-accent bg-[#070b18] text-white font-medium"
+                />
+              </div>
+              <div>
+                <label className="block text-xs uppercase tracking-wider font-bold mb-2 text-accent">New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Leave blank to keep current"
+                  className="w-full px-4 py-2.5 border border-[#1a2440] rounded-xl text-sm focus:outline-none focus:border-accent bg-[#070b18] text-white font-medium"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs uppercase tracking-wider font-bold mb-2 text-accent">Current Password (Required for Profile Changes)</label>
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Enter current password"
+                className="w-full px-4 py-2.5 border border-[#1a2440] rounded-xl text-sm focus:outline-none focus:border-accent bg-[#070b18] text-white font-medium"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Section 2: LAN Connectivity */}
+        <div className="bg-[#0c1222] border border-[#1a2440] rounded-2xl p-6 shadow-sm">
+          <h2 className="text-base font-bold text-white mb-1">LAN Connectivity</h2>
+          <p className="text-xs text-[#7b8aaa] mb-4">Used to build LAN access links for students. Candidates connect to this IP.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2">Host Server IP Address</label>
+              <label className="block text-xs uppercase tracking-wider font-bold mb-2 text-accent">Host Server IP Address</label>
               <input
                 type="text"
                 value={serverIp}
                 onChange={(e) => setServerIp(e.target.value)}
-                className="w-full px-4 py-2 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-accent"
+                className="w-full px-4 py-2.5 border border-[#1a2440] rounded-xl text-sm focus:outline-none focus:border-accent bg-[#070b18] text-white font-medium"
               />
             </div>
             <div>
-              <label className="block text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2">Port Number</label>
+              <label className="block text-xs uppercase tracking-wider font-bold mb-2 text-accent">Port Number</label>
               <input
                 type="text"
                 value={port}
                 onChange={(e) => setPort(e.target.value)}
-                className="w-full px-4 py-2 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-accent"
+                className="w-full px-4 py-2.5 border border-[#1a2440] rounded-xl text-sm focus:outline-none focus:border-accent bg-[#070b18] text-white font-medium"
               />
             </div>
           </div>
-          <p className="text-xs text-slate-400 mt-2">Used to build LAN access links for students. Candidates must connect to this address.</p>
         </div>
 
-        {/* Section 2: Exam Security Policy */}
-        <div>
-          <h2 className="text-lg font-bold text-[#0a0f24] border-b border-slate-100 pb-2 mb-4">Exam Security Policy</h2>
+        {/* Section 3: Security Policy */}
+        <div className="bg-[#0c1222] border border-[#1a2440] rounded-2xl p-6 shadow-sm">
+          <h2 className="text-base font-bold text-white mb-1">Exam Security Policy</h2>
+          <p className="text-xs text-[#7b8aaa] mb-4">Configure exam integrity rules and allowed student behaviours.</p>
           <div className="space-y-4">
             <div>
-              <label className="block text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2">Max Tab Switches Allowed</label>
+              <label className="block text-xs uppercase tracking-wider font-bold mb-2 text-accent">Max Tab Switches Allowed</label>
               <input
                 type="number"
                 value={maxWarnings}
                 onChange={(e) => setMaxWarnings(e.target.value)}
-                className="w-32 px-4 py-2 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-accent"
+                className="w-32 px-4 py-2.5 border border-[#1a2440] rounded-xl text-sm focus:outline-none focus:border-accent bg-[#070b18] text-white font-medium"
               />
-              <p className="text-xs text-slate-400 mt-1">Alerts invigilator when exceeded. Exam can be auto-submitted if configured.</p>
             </div>
 
-            <div className="flex items-center gap-3">
-              <input
-                id="allowCopyPaste"
-                type="checkbox"
-                checked={allowCopyPaste}
-                onChange={(e) => setAllowCopyPaste(e.target.checked)}
-                className="h-4 w-4 text-accent border-[#e2e8f0] rounded focus:ring-accent"
-              />
-              <label htmlFor="allowCopyPaste" className="text-sm font-medium text-slate-700">
-                Allow copy & paste inside programming editor
-              </label>
-            </div>
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <div className="relative flex-shrink-0">
+                <input
+                  type="checkbox"
+                  checked={allowCopyPaste}
+                  onChange={(e) => setAllowCopyPaste(e.target.checked)}
+                  className="sr-only"
+                />
+                <div className={`w-10 h-6 rounded-full transition-colors ${allowCopyPaste ? 'bg-[#bf4507]' : 'bg-[#1a2440]'}`} />
+                <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${allowCopyPaste ? 'translate-x-4' : ''}`} />
+              </div>
+              <span className="text-sm font-medium text-[#f0f2f8]">Allow copy &amp; paste inside programming editor</span>
+            </label>
 
-            <div className="flex items-center gap-3">
-              <input
-                id="enableConsole"
-                type="checkbox"
-                checked={enableConsole}
-                onChange={(e) => setEnableConsole(e.target.checked)}
-                className="h-4 w-4 text-accent border-[#e2e8f0] rounded focus:ring-accent"
-              />
-              <label htmlFor="enableConsole" className="text-sm font-medium text-slate-700">
-                Allow student output compilation logs execution console
-              </label>
-            </div>
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <div className="relative flex-shrink-0">
+                <input
+                  type="checkbox"
+                  checked={enableConsole}
+                  onChange={(e) => setEnableConsole(e.target.checked)}
+                  className="sr-only"
+                />
+                <div className={`w-10 h-6 rounded-full transition-colors ${enableConsole ? 'bg-[#bf4507]' : 'bg-[#1a2440]'}`} />
+                <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${enableConsole ? 'translate-x-4' : ''}`} />
+              </div>
+              <span className="text-sm font-medium text-[#f0f2f8]">Allow student code execution console</span>
+            </label>
           </div>
         </div>
 
         <button
           type="submit"
-          className="bg-[#1b2554] hover:bg-[#0a0f24] text-white font-semibold py-2 px-6 rounded-xl text-sm transition-all"
+          className="bg-accent hover:bg-accent-hover text-white font-semibold py-3 px-6 rounded-xl text-sm transition-all shadow-md flex items-center gap-2"
         >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
           Save Configurations
         </button>
       </form>

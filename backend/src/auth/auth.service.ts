@@ -74,6 +74,40 @@ export class AuthService {
     return { access_token: token, user: { id: user.id, username: user.username, name: user.name, role: user.role } };
   }
 
+  async googleLogin(googleUser: any) {
+    if (!googleUser) {
+      throw new UnauthorizedException('No user from google');
+    }
+
+    const { email, fullName } = googleUser;
+
+    let user = await this.prisma.user.findUnique({
+      where: { username: email },
+    });
+
+    if (!user) {
+      // Create a random password since they are logging in with Google
+      const randomPassword = require('crypto').randomBytes(32).toString('hex');
+      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+      user = await this.prisma.user.create({
+        data: {
+          username: email,
+          password: hashedPassword,
+          name: fullName,
+        },
+      });
+
+      // Auto-seed question bank
+      await this.seedUserQuestions(user.id);
+    }
+
+    const payload = { sub: user.id, username: user.username, role: user.role };
+    const token = this.jwtService.sign(payload);
+
+    return { access_token: token, user: { id: user.id, username: user.username, name: user.name, role: user.role } };
+  }
+
   private async seedUserQuestions(userId: string) {
     const sampleQuestions = [
       {

@@ -4,6 +4,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =====================================================================
+   LIGHT MODE (Default)
+   ===================================================================== */
 :root {
   --background: 210 20% 98%;
   --foreground: 222 47% 12%;
@@ -11,71 +14,233 @@
   --card-foreground: 222 47% 12%;
   --popover: 0 0% 100%;
   --popover-foreground: 222 47% 12%;
-  
-  /* Deep Blue */
+
   --primary: 222 47% 15%;
   --primary-foreground: 210 40% 98%;
-  
-  --secondary: 210 40% 96.1%;
+
+  --secondary: 210 40% 96%;
   --secondary-foreground: 222 47% 12%;
-  
+
   --muted: 210 30% 94%;
-  --muted-foreground: 215 16% 47%;
-  
-  /* Cyan/Teal Accent */
-  --accent: 173 80% 36%;
-  --accent-foreground: 210 40% 98%;
-  
-  /* Success, Warning, Destructive */
+  --muted-foreground: 215 16% 40%;
+
+  --accent: 20 93% 39%;
+  --accent-foreground: 0 0% 100%;
+  --tint-color: #bf4507;
+
   --success: 142 76% 36%;
-  --success-foreground: 355 100% 97%;
+  --success-foreground: 0 0% 100%;
   --warning: 24 95% 50%;
-  --warning-foreground: 355 100% 97%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 210 40% 98%;
-  
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --ring: 222 47% 15%;
-  
-  --radius: 0.5rem;
+  --warning-foreground: 0 0% 100%;
+  --destructive: 0 84% 55%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 214 32% 88%;
+  --input: 214 32% 88%;
+  --ring: 175 70% 35%;
+  --radius: 0.75rem;
+
+  /* Layout Variables - Light */
+  --sidebar-bg: #0a0f24;
+  --sidebar-text: #94a3b8;
+  --sidebar-active-bg: #1b2554;
+  --sidebar-border: #1e295d;
+  --header-bg: #ffffff;
+  --header-text: #0f172a;
+  --panel-bg: #f8fafc;
+  --panel-text: #0f172a;
+  --border-light: #e2e8f0;
+  --card-bg: #ffffff;
+  --card-text: #0f172a;
+
+  /* Editor Variables - Light */
+  --editor-bg: #ffffff;
+  --editor-fg: #0f172a;
+  --editor-gutter-bg: #f8fafc;
+  --editor-gutter-fg: #64748b;
+  --editor-border: #e2e8f0;
+  --editor-active-line: #f1f5f9;
 }
 
+/* =====================================================================
+   DARK MODE — Deep Navy / Slate with crisp text contrast
+   ===================================================================== */
 .dark {
-  --background: 222 47% 10%;
-  --foreground: 210 40% 98%;
-  --card: 222 47% 12%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222 47% 12%;
-  --popover-foreground: 210 40% 98%;
-  
+  --background: 222 47% 7%;
+  --foreground: 210 40% 96%;
+  --card: 222 40% 11%;
+  --card-foreground: 210 40% 96%;
+  --popover: 222 40% 11%;
+  --popover-foreground: 210 40% 96%;
+
   --primary: 210 40% 98%;
-  --primary-foreground: 222 47% 12%;
-  
-  --secondary: 217 32% 17%;
-  --secondary-foreground: 210 40% 98%;
-  
-  --muted: 217 32% 15%;
+  --primary-foreground: 222 47% 7%;
+
+  --secondary: 217 33% 16%;
+  --secondary-foreground: 210 40% 92%;
+
+  --muted: 217 33% 14%;
   --muted-foreground: 215 20% 65%;
-  
-  --accent: 173 80% 40%;
-  --accent-foreground: 222 47% 10%;
-  
-  --destructive: 0 62% 40%;
-  --destructive-foreground: 210 40% 98%;
-  
-  --border: 217 32% 17%;
-  --input: 217 32% 17%;
-  --ring: 210 40% 98%;
+
+  --destructive: 0 62% 45%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 217 30% 20%;
+  --input: 217 30% 20%;
+  --ring: 175 70% 45%;
+
+  /* Layout Variables - Dark */
+  --sidebar-bg: #070a16;
+  --sidebar-text: #94a3b8;
+  --sidebar-active-bg: #141c38;
+  --sidebar-border: #1e294d;
+  --header-bg: #0d1224;
+  --header-text: #f8fafc;
+  --panel-bg: #080c1a;
+  --panel-text: #f8fafc;
+  --border-light: #1e2a4a;
+  --card-bg: #0d1224;
+  --card-text: #f8fafc;
+
+  /* Editor Variables - Dark */
+  --editor-bg: #04060d;
+  --editor-fg: #f8fafc;
+  --editor-gutter-bg: #080c1a;
+  --editor-gutter-fg: #64748b;
+  --editor-border: #1e2a4a;
+  --editor-active-line: #10162a;
 }
 
+/* =====================================================================
+   BASE LAYER & UTILITIES
+   ===================================================================== */
 @layer base {
   * {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
     font-family: 'Inter', 'Poppins', sans-serif;
   }
+  input, textarea, select {
+    color: #f0f2f8;
+    background-color: #0c1222;
+    border-color: #1a2440;
+  }
+  select option {
+    background-color: #0c1222;
+    color: #f0f2f8;
+  }
+}
+
+.tint-button {
+  background-color: var(--tint-color, #0d9488);
+  color: #ffffff;
+}
+
+.tint-button:hover {
+  opacity: 0.92;
+}
+
+.tint-text {
+  color: var(--tint-color, #0d9488);
+}
+
+.tint-border {
+  border-color: var(--tint-color, #0d9488);
+}
+
+/* CodeMirror Editor Overrides */
+.cm-editor,
+.cm-scroller {
+  background-color: var(--editor-bg) !important;
+  color: var(--editor-fg) !important;
+}
+.cm-gutters {
+  background-color: var(--editor-gutter-bg) !important;
+  color: var(--editor-gutter-fg) !important;
+  border-right: 1px solid var(--editor-border) !important;
+}
+.cm-activeLine,
+.cm-activeLineGutter {
+  background-color: var(--editor-active-line) !important;
+}
+
+/* =====================================================================
+   CUSTOM SCROLLBARS, CHECKBOXES & THEME ENHANCEMENTS
+   ===================================================================== */
+
+/* Modern Custom Scrollbar */
+* {
+  scrollbar-color: #1e294d #030712;
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background-color: #030712;
+}
+
+::-webkit-scrollbar-track {
+  background: #030712;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e294d;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+::-webkit-scrollbar-corner {
+  background: #030712;
+}
+
+/* Dark Mode Native Checkboxes */
+input[type="checkbox"] {
+  accent-color: #bf4507;
+  color-scheme: dark;
+  cursor: pointer;
+}
+
+/* Prevent Chrome / Safari autofill from turning inputs white in dark mode */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f0f2f8 !important;
+  -webkit-box-shadow: 0 0 0px 1000px #0c1222 inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Custom Styled Radio Buttons */
+input[type="radio"] {
+  accent-color: var(--tint-color, #0d9488);
+  width: 1.125rem;
+  height: 1.125rem;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+/* Glassmorphism Cards */
+.glass-panel {
+  background: rgba(13, 18, 36, 0.75);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-panel-light {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
