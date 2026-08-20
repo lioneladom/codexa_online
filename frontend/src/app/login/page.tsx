@@ -14,20 +14,12 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  const [ripples, setRipples] = useState<{ x: number, y: number, id: number }[]>([]);
+  const [cursorPos, setCursorPos] = useState({ x: -9999, y: -9999 });
 
-  const handleRipple = (e: React.MouseEvent<HTMLElement>) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
     const { currentTarget, clientX, clientY } = e;
     const { left, top } = currentTarget.getBoundingClientRect();
-    const x = clientX - left;
-    const y = clientY - top;
-    
-    const id = Date.now();
-    setRipples(prev => [...prev, { x, y, id }]);
-    
-    setTimeout(() => {
-      setRipples(prev => prev.filter(r => r.id !== id));
-    }, 1000);
+    setCursorPos({ x: clientX - left, y: clientY - top });
   };
 
   useEffect(() => {
@@ -87,16 +79,24 @@ export default function LoginPage() {
 
   return (
     <main 
-      className="flex min-h-screen items-center justify-center p-6 bg-aurora text-[#f0f2f8] relative overflow-hidden"
-      onClick={handleRipple}
+      className="flex min-h-screen items-center justify-center p-6 text-[#f0f2f8] relative overflow-hidden"
+      style={{ background: '#040813' }}
+      onMouseMove={handleMouseMove}
     >
-      {ripples.map(ripple => (
-        <span
-          key={ripple.id}
-          className="ripple-effect"
-          style={{ left: ripple.x, top: ripple.y, width: 100, height: 100 }}
-        />
-      ))}
+      {/* Cursor-following glow */}
+      <div
+        className="pointer-events-none absolute inset-0 z-0 transition-none"
+        style={{
+          background: `radial-gradient(900px circle at ${cursorPos.x}px ${cursorPos.y}px, rgba(191,69,7,0.18) 0%, rgba(60,30,80,0.10) 40%, transparent 70%)`,
+        }}
+      />
+      {/* Subtle static mesh overlay */}
+      <div
+        className="pointer-events-none absolute inset-0 z-0 opacity-40"
+        style={{
+          backgroundImage: `radial-gradient(ellipse at 20% 50%, rgba(10,17,44,0.8) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(21,10,33,0.6) 0%, transparent 50%)`,
+        }}
+      />
       <div className="z-10 w-full max-w-md bg-[#0c1222]/60 backdrop-blur-2xl border border-[#1a2440]/80 p-8 rounded-3xl shadow-2xl relative overflow-hidden transition-all duration-500">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-accent to-transparent opacity-70" />
         
