@@ -66,38 +66,6 @@
 /* =====================================================================
    ANIMATIONS (Aurora & Ripple)
    ===================================================================== */
-@keyframes aurora {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.bg-aurora {
-  background: linear-gradient(135deg, #030712 0%, #0a112c 25%, #150a21 50%, #0c1838 75%, #030712 100%);
-  background-size: 400% 400%;
-  animation: aurora 20s ease infinite;
-}
-
-@keyframes ripple-drop {
-  0% {
-    transform: scale(0);
-    opacity: 0.5;
-  }
-  100% {
-    transform: scale(4);
-    opacity: 0;
-  }
-}
-
-.ripple-effect {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(191, 69, 7, 0.4) 0%, transparent 60%);
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  animation: ripple-drop 1s ease-out forwards;
-}
-
 /* =====================================================================
    BASE LAYER & UTILITIES
    ===================================================================== */
@@ -231,3 +199,37 @@ input[type="radio"] {
   border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
+
+@layer utilities {
+  .bg-aurora {
+    background: linear-gradient(135deg, #030712 0%, #0a112c 25%, #150a21 50%, #0c1838 75%, #030712 100%);
+    background-size: 400% 400%;
+    animation: aurora 20s ease infinite;
+  }
+
+  .ripple-effect {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(191, 69, 7, 0.4) 0%, transparent 60%);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    animation: ripple-drop 1s ease-out forwards;
+  }
+
+  @keyframes aurora {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  @keyframes ripple-drop {
+    0% {
+      transform: scale(0);
+      opacity: 0.5;
+    }
+    100% {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+}
