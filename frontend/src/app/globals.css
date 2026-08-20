@@ -73,10 +73,15 @@
   * {
     @apply border-border;
   }
+  html {
+    background-color: #040813;
+    color-scheme: dark;
+  }
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
+    background-color: #040813;
+    color: #f0f2f8;
     font-family: 'Inter', 'Poppins', sans-serif;
+    min-height: 100vh;
   }
   input, textarea, select {
     color: #f0f2f8;
