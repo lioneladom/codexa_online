@@ -32,7 +32,9 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
   googleAuthRedirect(@Req() req, @Res() res) {
-    const baseUrl = process.env.BASE_URL || 'https://eii-tau.vercel.app';
+    const rawBaseUrl = process.env.BASE_URL || 'https://eii-tau.vercel.app';
+    const baseUrl = rawBaseUrl.replace(/\/+$/, '');
+
     if (!req.user) {
       return res.redirect(`${baseUrl}/login?error=google_auth_failed`);
     }
