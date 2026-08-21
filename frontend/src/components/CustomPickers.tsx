@@ -120,7 +120,11 @@ export function CustomDatePicker({ value, onChange, className = '', required = f
       <input
         type="text"
         readOnly
-        value={value ? new Date(value + 'T00:00:00').toLocaleDateString() : ''}
+        value={(() => {
+          if (!value || typeof value !== 'string') return '';
+          const d = new Date(value.includes('T') ? value : value + 'T00:00:00');
+          return isNaN(d.getTime()) ? value : d.toLocaleDateString();
+        })()}
         onClick={() => setIsOpen(true)}
         className={`${className} cursor-pointer`}
         placeholder="Select Date"
@@ -250,9 +254,10 @@ export function CustomTimePicker({ value, onChange, className = '', required = f
   const [clockMode, setClockMode] = useState<'hour' | 'minute'>('hour');
   const [selectedHour, setSelectedHour] = useState(9);
   const [selectedMinute, setSelectedMinute] = useState(0);
+  const [typedInput, setTypedInput] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Initialize selectedHour/selectedMinute from value
+  // Sync internal state when value prop changes
   useEffect(() => {
     if (value) {
       const parts = value.split(':');
@@ -282,6 +287,38 @@ export function CustomTimePicker({ value, onChange, className = '', required = f
     };
   }, [isOpen]);
 
+  // Keyboard shortcut listener when popup is open
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key >= '0' && e.key <= '9') {
+        const num = parseInt(e.key);
+        setTypedInput((prev) => {
+          const next = (prev + e.key).slice(-2);
+          const val = parseInt(next);
+          if (clockMode === 'hour') {
+            if (val >= 0 && val <= 23) {
+              setSelectedHour(val);
+            }
+          } else {
+            if (val >= 0 && val <= 59) {
+              setSelectedMinute(val);
+            }
+          }
+          return next;
+        });
+      } else if (e.key === 'Enter') {
+        handleSet();
+      } else if (e.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, clockMode, selectedHour, selectedMinute]);
+
   const handleClear = () => {
     onChange('');
     setIsOpen(false);
@@ -292,6 +329,30 @@ export function CustomTimePicker({ value, onChange, className = '', required = f
     const mStr = String(selectedMinute).padStart(2, '0');
     onChange(`${hStr}:${mStr}`);
     setIsOpen(false);
+  };
+
+  const handleMainInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const isDelete = (e.nativeEvent as any)?.inputType === 'deleteContentBackward';
+    let digits = e.target.value.replace(/[^\d]/g, '');
+    if (digits.length > 4) digits = digits.slice(0, 4);
+
+    let val = digits;
+    if (digits.length >= 3) {
+      val = `${digits.slice(0, 2)}:${digits.slice(2)}`;
+    } else if (digits.length === 2 && !isDelete) {
+      val = `${digits}:`;
+    }
+
+    onChange(val);
+
+    if (digits.length >= 2) {
+      const h = parseInt(digits.slice(0, 2));
+      if (!isNaN(h) && h >= 0 && h <= 23) setSelectedHour(h);
+    }
+    if (digits.length === 4) {
+      const m = parseInt(digits.slice(2, 4));
+      if (!isNaN(m) && m >= 0 && m <= 59) setSelectedMinute(m);
+    }
   };
 
   // Convert 24h hour to 12h display string
@@ -312,38 +373,32 @@ export function CustomTimePicker({ value, onChange, className = '', required = f
     const cy = rect.top + rect.height / 2;
     const dx = e.clientX - cx;
     const dy = e.clientY - cy;
-    let angle = Math.atan2(dy, dx) * (180 / Math.PI); // -180 to 180
-    angle = (angle + 90 + 360) % 360; // 0 to 360, 0 is top (12 o'clock)
+    let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    angle = (angle + 90 + 360) % 360;
 
     if (clockMode === 'hour') {
       const dist = Math.sqrt(dx * dx + dy * dy);
-      const isInner = dist < (rect.width * 0.28); // inner circle threshold
-      let hour = Math.round(angle / 30); // 0 to 12
+      const isInner = dist < (rect.width * 0.28);
+      let hour = Math.round(angle / 30);
       if (hour === 0) hour = 12;
       if (isInner) {
-        // inner circle: 00, 13-23
-        if (hour === 12) {
-          hour = 0;
-        } else {
-          hour = hour + 12;
-        }
+        if (hour === 12) hour = 0;
+        else hour = hour + 12;
       }
       setSelectedHour(hour);
       setClockMode('minute');
     } else {
-      const minute = Math.round(angle / 6) % 60; // 0 to 59
+      const minute = Math.round(angle / 6) % 60;
       setSelectedMinute(minute);
     }
   };
 
-  // Render numbers around the clock face
   const renderHours = () => {
     const outerHours = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
     const innerHours = [0, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
 
     return (
       <>
-        {/* Outer Circle (1-12) */}
         {outerHours.map((h, i) => {
           const angleDeg = i * 30;
           const angleRad = (angleDeg - 90) * (Math.PI / 180);
@@ -363,7 +418,6 @@ export function CustomTimePicker({ value, onChange, className = '', required = f
           );
         })}
 
-        {/* Inner Circle (00, 13-23) */}
         {innerHours.map((h, i) => {
           const angleDeg = i * 30;
           const angleRad = (angleDeg - 90) * (Math.PI / 180);
@@ -408,7 +462,6 @@ export function CustomTimePicker({ value, onChange, className = '', required = f
     });
   };
 
-  // Get current hand angle and length
   const getHandStyle = () => {
     if (clockMode === 'hour') {
       const isInner = selectedHour === 0 || (selectedHour >= 13 && selectedHour <= 23);
@@ -429,22 +482,29 @@ export function CustomTimePicker({ value, onChange, className = '', required = f
 
   return (
     <div className="relative w-full" ref={containerRef}>
-      <input
-        type="text"
-        readOnly
-        value={value ? `${display.hStr}:${display.mStr} ${display.ampm}` : ''}
-        onClick={() => {
-          setIsOpen(true);
-          setClockMode('hour');
-        }}
-        className={`${className} cursor-pointer`}
-        placeholder="Select Time"
-        required={required}
-      />
-      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
+      <div className="relative flex items-center">
+        <input
+          type="text"
+          value={value || ''}
+          onChange={handleMainInputChange}
+          className={`${className}`}
+          placeholder="09:30"
+          required={required}
+        />
+        <button
+          type="button"
+          onClick={() => {
+            setIsOpen(!isOpen);
+            setClockMode('hour');
+            setTypedInput('');
+          }}
+          className="absolute right-3 p-1 text-slate-400 hover:text-white transition-colors"
+          title="Toggle Clock Picker"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
       </div>
 
       {isOpen && (
@@ -456,92 +516,92 @@ export function CustomTimePicker({ value, onChange, className = '', required = f
             className="bg-[#1e293b] border border-slate-700 text-white rounded-2xl w-[280px] shadow-2xl overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-          {/* Header */}
-          <div className="bg-slate-900 p-5 flex justify-center items-center gap-1 border-b border-slate-800">
-            <button
-              type="button"
-              onClick={() => setClockMode('hour')}
-              className={`text-4xl font-bold ${clockMode === 'hour' ? 'text-orange-500' : 'text-slate-500'}`}
-            >
-              {display.hStr}
-            </button>
-            <span className="text-4xl font-bold text-slate-500">:</span>
-            <button
-              type="button"
-              onClick={() => setClockMode('minute')}
-              className={`text-4xl font-bold ${clockMode === 'minute' ? 'text-orange-500' : 'text-slate-500'}`}
-            >
-              {display.mStr}
-            </button>
-            <div className="flex flex-col ml-3 text-sm font-bold text-slate-400">
+            {/* Header */}
+            <div className="bg-slate-900 p-5 flex justify-center items-center gap-1 border-b border-slate-800">
               <button
                 type="button"
-                onClick={() => setSelectedHour((prev) => (prev < 12 ? prev + 12 : prev))}
-                className={selectedHour >= 12 ? 'text-orange-500' : 'text-slate-500'}
+                onClick={() => { setClockMode('hour'); setTypedInput(''); }}
+                className={`text-4xl font-bold transition-colors ${clockMode === 'hour' ? 'text-orange-500' : 'text-slate-500 hover:text-slate-300'}`}
               >
-                PM
+                {display.hStr}
               </button>
+              <span className="text-4xl font-bold text-slate-500">:</span>
               <button
                 type="button"
-                onClick={() => setSelectedHour((prev) => (prev >= 12 ? prev - 12 : prev))}
-                className={selectedHour < 12 ? 'text-orange-500' : 'text-slate-500'}
+                onClick={() => { setClockMode('minute'); setTypedInput(''); }}
+                className={`text-4xl font-bold transition-colors ${clockMode === 'minute' ? 'text-orange-500' : 'text-slate-500 hover:text-slate-300'}`}
               >
-                AM
+                {display.mStr}
               </button>
-            </div>
-          </div>
-
-          {/* Clock Dial container */}
-          <div className="p-6 flex items-center justify-center bg-slate-800">
-            <div
-              onClick={handleClockClick}
-              className="relative w-48 h-48 rounded-full bg-slate-900 border border-slate-700 cursor-pointer flex items-center justify-center"
-            >
-              {/* Center Pivot dot */}
-              <div className="absolute w-2 h-2 rounded-full bg-orange-500 z-20" />
-
-              {/* Clock Hand line */}
-              <div
-                style={getHandStyle()}
-                className="absolute bottom-1/2 w-0.5 bg-orange-500 origin-bottom z-10 flex flex-col items-center justify-start"
-              >
-                {/* Hand tip dot */}
-                <div className="w-5 h-5 rounded-full bg-orange-500 -mt-2.5 flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                </div>
+              <div className="flex flex-col ml-3 text-sm font-bold text-slate-400">
+                <button
+                  type="button"
+                  onClick={() => setSelectedHour((prev) => (prev < 12 ? prev + 12 : prev))}
+                  className={selectedHour >= 12 ? 'text-orange-500 font-extrabold' : 'text-slate-500 hover:text-slate-300'}
+                >
+                  PM
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedHour((prev) => (prev >= 12 ? prev - 12 : prev))}
+                  className={selectedHour < 12 ? 'text-orange-500 font-extrabold' : 'text-slate-500 hover:text-slate-300'}
+                >
+                  AM
+                </button>
               </div>
-
-              {/* Numbers */}
-              {clockMode === 'hour' ? renderHours() : renderMinutes()}
             </div>
-          </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-2 px-4 py-3 bg-slate-900 border-t border-slate-800">
-            <button
-              type="button"
-              onClick={handleClear}
-              className="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white rounded-md transition-colors"
-            >
-              Clear
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white rounded-md transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSet}
-              className="px-4 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold rounded-lg transition-colors"
-            >
-              Set
-            </button>
+            {/* Clock Dial container */}
+            <div className="p-6 flex items-center justify-center bg-slate-800">
+              <div
+                onClick={handleClockClick}
+                className="relative w-48 h-48 rounded-full bg-slate-900 border border-slate-700 cursor-pointer flex items-center justify-center"
+              >
+                {/* Center Pivot dot */}
+                <div className="absolute w-2 h-2 rounded-full bg-orange-500 z-20" />
+
+                {/* Clock Hand line */}
+                <div
+                  style={getHandStyle()}
+                  className="absolute bottom-1/2 w-0.5 bg-orange-500 origin-bottom z-10 flex flex-col items-center justify-start"
+                >
+                  {/* Hand tip dot */}
+                  <div className="w-5 h-5 rounded-full bg-orange-500 -mt-2.5 flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                  </div>
+                </div>
+
+                {/* Numbers */}
+                {clockMode === 'hour' ? renderHours() : renderMinutes()}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-2 px-4 py-3 bg-slate-900 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={handleClear}
+                className="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white rounded-md transition-colors"
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white rounded-md transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSet}
+                className="px-4 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold rounded-lg transition-colors"
+              >
+                Set
+              </button>
+            </div>
           </div>
         </div>
-      </div>
       )}
     </div>
   );

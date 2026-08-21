@@ -165,7 +165,7 @@ export default function ExamMonitorPage() {
               studentName: data.studentName,
               studentNumber: data.studentNumber,
               activityType: 'SUBMIT',
-              details: `Submitted question "${data.questionTitle}" • Scored ${data.score}/${data.totalMarks}`,
+              details: `Submitted response for "${data.questionTitle}" (${data.totalMarks} marks)`,
               timestamp: logTime,
             },
             ...prev,
@@ -219,40 +219,40 @@ export default function ExamMonitorPage() {
   }, [examInfo]);
 
   return (
-    <div className="p-8">
+    <div className="p-8 bg-[#030712] min-h-screen text-[#f0f2f8]">
       {/* Header bar */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#0a0f24]">Live Exam Monitor</h1>
+          <h1 className="text-2xl font-bold text-white tracking-wide">Live Exam Monitor</h1>
           {examInfo && (
-            <p className="text-slate-500 text-sm mt-1">
-              Currently monitoring: <span className="font-semibold text-slate-700">{examInfo.title}</span> ({examInfo.courseCode})
+            <p className="text-[#7b8aaa] text-sm mt-1">
+              Currently monitoring: <span className="font-semibold text-white">{examInfo.title}</span> ({examInfo.courseCode})
             </p>
           )}
         </div>
         <button
           onClick={() => router.back()}
-          className="bg-white border border-[#e2e8f0] text-slate-700 font-semibold px-4 py-2 rounded-xl text-xs hover:bg-slate-50 transition-all shadow-sm"
+          className="bg-[#0c1222] border border-[#1a2440] text-[#f0f2f8] font-semibold px-4 py-2 rounded-xl text-xs hover:bg-[#161e36] transition-all shadow-sm"
         >
           ← Back to Exams
         </button>
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-slate-500 bg-white border border-[#e2e8f0] rounded-2xl shadow-sm">
+        <div className="text-center py-12 text-[#7b8aaa] bg-[#0c1222] border border-[#1a2440] rounded-2xl shadow-sm">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-accent mb-2"></div>
           <p>Seeding active exam room gateway...</p>
         </div>
       ) : (
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Candidates Status Grid */}
-          <div className="flex-1 bg-white border border-[#e2e8f0] p-6 rounded-2xl shadow-sm">
-            <h2 className="text-sm font-bold text-[#0a0f24] uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">
+          <div className="flex-1 bg-[#0c1222] border border-[#1a2440] p-6 rounded-2xl shadow-sm">
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-b border-[#1a2440] pb-2">
               Active Candidates ({sessions.length})
             </h2>
 
             {sessions.length === 0 ? (
-              <div className="text-center py-12 text-slate-400 text-sm border border-dashed border-[#e2e8f0] rounded-xl">
+              <div className="text-center py-12 text-[#7b8aaa] text-sm border border-dashed border-[#1a2440] rounded-xl bg-[#070b18]">
                 No candidates have connected to this exam room yet.
               </div>
             ) : (
@@ -266,32 +266,32 @@ export default function ExamMonitorPage() {
                       key={student.id}
                       className={`p-4 border rounded-xl transition-all relative overflow-hidden ${
                         isViolator
-                          ? 'bg-red-50 border-red-200'
+                          ? 'bg-rose-950/40 border-rose-500/40'
                           : isCompleted
-                          ? 'bg-slate-50 border-slate-200 opacity-75'
-                          : 'bg-white border-[#e2e8f0] hover:shadow-sm'
+                          ? 'bg-[#070b18] border-[#1a2440] opacity-75'
+                          : 'bg-[#070b18] border-[#1a2440] hover:border-accent/40'
                       }`}
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h4 className="font-bold text-sm text-[#0a0f24]">{student.studentName}</h4>
-                          <p className="text-xs text-slate-500 font-mono">{student.studentNumber}</p>
+                          <h4 className="font-bold text-sm text-white">{student.studentName}</h4>
+                          <p className="text-xs text-[#7b8aaa] font-mono">{student.studentNumber}</p>
                         </div>
                         <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
                           isCompleted
-                            ? 'bg-slate-200 text-slate-700'
-                            : 'bg-green-100 text-green-800'
+                            ? 'bg-[#161e36] text-[#7b8aaa] border border-[#1a2440]'
+                            : 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/40'
                         }`}>
                           {student.status}
                         </span>
                       </div>
 
-                      <div className="flex justify-between items-center mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500">
-                        <span>Answers: <strong className="text-slate-700">{student.submissions.length}</strong></span>
+                      <div className="flex justify-between items-center mt-4 pt-3 border-t border-[#1a2440] text-xs text-[#7b8aaa]">
+                        <span>Answers: <strong className="text-white">{student.submissions.length}</strong></span>
                         <div className="flex items-center gap-1">
                           <span>Warnings:</span>
                           <span className={`font-mono font-bold px-1.5 py-0.5 rounded ${
-                            student.warningCount > 0 ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'
+                            student.warningCount > 0 ? 'bg-rose-950/60 text-rose-400 border border-rose-800/40' : 'bg-[#0c1222] text-[#7b8aaa] border border-[#1a2440]'
                           }`}>
                             {student.warningCount}
                           </span>
@@ -305,21 +305,21 @@ export default function ExamMonitorPage() {
           </div>
 
           {/* Live activity feed sidebar */}
-          <div className="w-full lg:w-80 bg-white border border-[#e2e8f0] p-6 rounded-2xl shadow-sm flex flex-col h-[500px]">
-            <h2 className="text-sm font-bold text-[#0a0f24] uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">
+          <div className="w-full lg:w-80 bg-[#0c1222] border border-[#1a2440] p-6 rounded-2xl shadow-sm flex flex-col h-[500px]">
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-b border-[#1a2440] pb-2">
               Live Feed Stream
             </h2>
             <div className="flex-1 overflow-y-auto space-y-3">
               {activityLogs.length === 0 ? (
-                <p className="text-xs text-slate-400 italic text-center pt-8">Real-time candidate actions will display here.</p>
+                <p className="text-xs text-[#7b8aaa] italic text-center pt-8">Real-time candidate actions will display here.</p>
               ) : (
                 activityLogs.map((log) => (
-                  <div key={log.id} className="p-3 bg-slate-50 border border-[#e2e8f0] rounded-xl text-xs space-y-1">
+                  <div key={log.id} className="p-3 bg-[#070b18] border border-[#1a2440] rounded-xl text-xs space-y-1">
                     <div className="flex justify-between items-center">
-                      <span className="font-bold text-slate-700">{log.studentName}</span>
-                      <span className="text-[9px] text-slate-400 font-mono">{new Date(log.timestamp).toLocaleTimeString()}</span>
+                      <span className="font-bold text-white">{log.studentName}</span>
+                      <span className="text-[9px] text-[#7b8aaa] font-mono">{new Date(log.timestamp).toLocaleTimeString()}</span>
                     </div>
-                    <p className="text-slate-500 text-[10px] leading-relaxed">{log.details}</p>
+                    <p className="text-[#7b8aaa] text-[10px] leading-relaxed">{log.details}</p>
                   </div>
                 ))
               )}

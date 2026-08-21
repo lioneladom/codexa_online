@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { getApiUrl, getSocketUrl } from '@/config/api';
+import CodexaLogo from '@/components/CodexaLogo';
 
 interface Submission {
   id: string;
@@ -45,14 +46,14 @@ export default function InvigilatorPage({ params }: { params: { accessCode: stri
 
   const socketRef = useRef<Socket | null>(null);
 
-  // 1. Authenticate with invigilator credentials and fetch seed sessions
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async (e?: React.FormEvent, bypassPassword?: string) => {
+    if (e) e.preventDefault();
     setLoading(true);
     setError('');
 
+    const passwordToUse = bypassPassword || password;
+
     try {
-      // Fetch exam details first
       const examRes = await fetch(`${getApiUrl()}/exams/access/${params.accessCode.toUpperCase()}`);
       if (!examRes.ok) {
         throw new Error('Exam not found or has been closed.');
@@ -60,11 +61,10 @@ export default function InvigilatorPage({ params }: { params: { accessCode: stri
       const examData = await examRes.json();
       setExamInfo(examData);
 
-      // Fetch active sessions using the new endpoint
       const res = await fetch(`${getApiUrl()}/exams/access/${params.accessCode.toUpperCase()}/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invigilatorPassword: password }),
+        body: JSON.stringify({ invigilatorPassword: passwordToUse }),
       });
 
       if (!res.ok) {
@@ -74,6 +74,7 @@ export default function InvigilatorPage({ params }: { params: { accessCode: stri
       const sessionsData = await res.json();
       setSessions(sessionsData);
       setIsAuthenticated(true);
+      sessionStorage.setItem(`invigilator_password_${params.accessCode.toUpperCase()}`, passwordToUse);
     } catch (err: any) {
       setError(err.message || 'Login failed.');
     } finally {
@@ -81,17 +82,20 @@ export default function InvigilatorPage({ params }: { params: { accessCode: stri
     }
   };
 
-  // 2. Establish Socket.io connection and handle real-time candidate notifications
+  useEffect(() => {
+    const cachedPassword = sessionStorage.getItem(`invigilator_password_${params.accessCode.toUpperCase()}`);
+    if (cachedPassword) {
+      handleLogin(undefined, cachedPassword);
+    }
+  }, [params.accessCode]);
+
   useEffect(() => {
     if (!isAuthenticated || !examInfo) return;
 
-    // Connect to WebSocket server
     const socket = io(getSocketUrl());
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      console.log('Connected to monitoring gateway');
-      // Join exam room
       socket.emit('joinExam', {
         examId: examInfo.id,
         userType: 'INVIGILATOR',
@@ -99,12 +103,10 @@ export default function InvigilatorPage({ params }: { params: { accessCode: stri
       });
     });
 
-    // Handle incoming real-time activity events
     socket.on('activity', (event: { activity: string; data: any; timestamp: string }) => {
       const { activity, data, timestamp } = event;
       const logTime = new Date(timestamp);
 
-      // Update local state list and add to feed logs
       setSessions(prevSessions => {
         const studentIndex = prevSessions.findIndex(
           s => s.studentNumber === data.studentNumber
@@ -113,7 +115,6 @@ export default function InvigilatorPage({ params }: { params: { accessCode: stri
         const updated = [...prevSessions];
 
         if (activity === 'STUDENT_JOIN') {
-          // If student joined and is not in list, add them
           if (studentIndex === -1) {
             updated.push({
               id: data.sessionId || Math.random().toString(),
@@ -143,7 +144,6 @@ export default function InvigilatorPage({ params }: { params: { accessCode: stri
         
         else if (activity === 'STUDENT_SUBMISSION') {
           if (studentIndex !== -1) {
-            // Update score/submission in list
             const existingSubIndex = updated[studentIndex].submissions.findIndex(
               sub => sub.questionId === data.questionId
             );
@@ -169,7 +169,7 @@ export default function InvigilatorPage({ params }: { params: { accessCode: stri
               studentName: data.studentName,
               studentNumber: data.studentNumber,
               activityType: 'SUBMIT',
-              details: `Submitted question "${data.questionTitle}" • Scored ${data.score}/${data.totalMarks}`,
+              details: `Submitted answer for "${data.questionTitle}"`,
               timestamp: logTime,
             },
             ...prev,
@@ -225,31 +225,30 @@ export default function InvigilatorPage({ params }: { params: { accessCode: stri
   /* Screen 1: Access Verification */
   if (!isAuthenticated) {
     return (
-      <main className="flex min-h-screen items-center justify-center p-6 bg-slate-50 text-slate-800">
-        <div className="w-full max-w-md bg-white border border-slate-200/80 p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
+      <main className="flex min-h-screen items-center justify-center p-6 bg-sys-background text-white" style={{ colorScheme: 'dark' }}>
+        <div className="w-full max-w-md bg-[#0c1222] border border-[#1a2440] p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#bf4507] to-transparent" />
           
           <form className="space-y-6" onSubmit={handleLogin}>
-            <div className="text-center mb-6">
-              <h1 className="text-3xl font-extrabold tracking-wider bg-gradient-to-r from-slate-900 to-[#1b2554] bg-clip-text text-transparent font-sans">
-                CODEXA
-              </h1>
-              <span className="inline-block mt-2 text-[10px] bg-slate-100 border border-slate-200 text-slate-600 font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                Invigilator Monitoring Gateway
+            <div className="text-center mb-6 flex flex-col items-center">
+              <CodexaLogo size="lg" layout="vertical" className="mb-2" />
+              <span className="inline-block mt-2 text-[10px] bg-[#bf4507]/15 border border-[#bf4507]/30 text-[#bf4507] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                Invigilator Operations Center
               </span>
-              <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700">
-                Access Code: {params.accessCode.toUpperCase()}
+              <div className="mt-4 p-3 bg-[#070b18] border border-[#161e36] rounded-xl text-xs font-mono font-bold text-slate-300">
+                ROOM CODE: <span className="text-[#bf4507]">{params.accessCode.toUpperCase()}</span>
               </div>
             </div>
 
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl">
+              <div className="p-4 bg-red-500/10 border border-red-500/30 text-red-400 text-xs rounded-xl">
                 {error}
               </div>
             )}
 
             <div>
-              <label htmlFor="password" className="block text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2">
-                Invigilator Key / Password
+              <label htmlFor="password" className="block text-[10px] uppercase tracking-widest text-[#bf4507] font-extrabold mb-2">
+                Invigilator Passcode
               </label>
               <input
                 id="password"
@@ -257,7 +256,7 @@ export default function InvigilatorPage({ params }: { params: { accessCode: stri
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-center tracking-widest"
+                className="w-full px-4 py-3 bg-[#070b18] border border-[#161e36] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-[#bf4507] transition-all text-center font-mono tracking-widest text-sm"
                 required
                 disabled={loading}
               />
@@ -266,9 +265,9 @@ export default function InvigilatorPage({ params }: { params: { accessCode: stri
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#0a0f24] hover:bg-[#1b2554] text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-md active:scale-[0.98] disabled:opacity-50"
+              className="w-full bg-[#bf4507] hover:bg-[#c24709] text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-[0_4px_20px_rgba(191,69,7,0.3)] text-sm tracking-wide"
             >
-              {loading ? 'Authenticating...' : 'Enter Monitoring Station'}
+              {loading ? 'Verifying Gateway...' : 'Enter Operations Center'}
             </button>
           </form>
         </div>
@@ -276,61 +275,71 @@ export default function InvigilatorPage({ params }: { params: { accessCode: stri
     );
   }
 
-  /* Screen 2: Real-time Monitor Desk */
+  /* Screen 2: Operations Center Real-time Monitor Desk */
   return (
-    <div className="flex flex-col h-screen bg-[#070b19] text-[#e2e8f0] overflow-hidden">
-      {/* Header */}
-      <header className="bg-[#0c102b] border-b border-[#1e295d] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-lg flex-shrink-0">
+    <div className="flex flex-col h-screen bg-[#030712] text-slate-100 overflow-hidden font-sans">
+      {/* Operations Header Bar */}
+      <header className="bg-[#0c1222] border-b border-[#1a2440] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl flex-shrink-0">
         <div>
-          <h1 className="text-xl font-bold tracking-wide font-sans text-white">{examInfo?.title}</h1>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[9px] bg-[#bf4507]/15 border border-[#bf4507]/30 text-[#bf4507] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
+              OPERATIONS CENTER
+            </span>
+          </div>
+          <h1 className="text-lg font-black tracking-wide text-white">{examInfo?.title}</h1>
           <p className="text-xs text-slate-400 mt-0.5 font-mono">
-            Room Code: {params.accessCode.toUpperCase()} • Local Server Gateway
+            Access Code: <span className="text-[#bf4507] font-bold">{params.accessCode.toUpperCase()}</span> · Live Socket Gateway
           </p>
         </div>
         <div className="flex gap-4 w-full sm:w-auto justify-between sm:justify-end">
-          <div className="bg-[#1b2554] border border-accent/40 rounded-xl px-4 py-2 text-xs font-semibold flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-accent animate-ping"></span>
-            <span>Live Sync Connected</span>
+          <div className="bg-[#070b18] border border-emerald-500/30 rounded-xl px-4 py-2 text-xs font-semibold flex items-center gap-2 text-emerald-400">
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="font-mono text-[11px]">Live Sync Connected</span>
           </div>
         </div>
       </header>
 
       {/* Mobile Tab Switcher */}
-      <div className="flex lg:hidden bg-[#0c102b] border-b border-[#1e295d] text-slate-300 font-mono select-none flex-shrink-0">
+      <div className="flex lg:hidden bg-[#0c1222] border-b border-[#1a2440] text-slate-300 font-mono select-none flex-shrink-0">
         <button
           onClick={() => setActiveTab('candidates')}
-          className={`flex-1 py-3 text-center text-xs font-semibold border-b-2 transition-all ${
-            activeTab === 'candidates' ? 'border-accent text-white bg-slate-800/40' : 'border-transparent text-slate-500'
+          className={`flex-1 py-3 text-center text-xs font-bold border-b-2 transition-all ${
+            activeTab === 'candidates' ? 'border-[#bf4507] text-white bg-[#1b2852]/40' : 'border-transparent text-slate-500'
           }`}
         >
           Candidates ({sessions.length})
         </button>
         <button
           onClick={() => setActiveTab('feed')}
-          className={`flex-1 py-3 text-center text-xs font-semibold border-b-2 transition-all ${
-            activeTab === 'feed' ? 'border-accent text-white bg-slate-800/40' : 'border-transparent text-slate-500'
+          className={`flex-1 py-3 text-center text-xs font-bold border-b-2 transition-all ${
+            activeTab === 'feed' ? 'border-[#bf4507] text-white bg-[#1b2852]/40' : 'border-transparent text-slate-500'
           }`}
         >
           Live Feed ({activityLogs.length})
         </button>
       </div>
 
-      {/* Main split dashboard pane */}
+      {/* Main Split Dashboard Pane */}
       <div className="flex flex-1 flex-col lg:flex-row overflow-hidden">
         {/* Left Side: Candidates Grid Status */}
-        <main className={`w-full lg:w-2/3 p-6 overflow-y-auto border-r border-[#1e295d] ${
+        <main className={`w-full lg:w-2/3 p-8 overflow-y-auto border-r border-[#1a2440] ${
           activeTab === 'candidates' ? 'block' : 'hidden lg:block'
         }`}>
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-4 font-mono">
-            Candidates List ({sessions.length})
-          </h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-[#bf4507]">
+              Active Candidates ({sessions.length})
+            </h2>
+          </div>
           
           {sessions.length === 0 ? (
-            <div className="h-[400px] flex items-center justify-center border border-dashed border-[#1e295d] rounded-2xl text-slate-500 text-sm">
-              Waiting for students to join the examination room...
+            <div className="h-[360px] flex flex-col items-center justify-center border border-dashed border-[#1a2440] rounded-3xl text-slate-500 text-xs font-mono">
+              <div className="w-10 h-10 rounded-full bg-[#161e36] flex items-center justify-center text-slate-400 mb-3">
+                ?
+              </div>
+              <p>Waiting for candidates to join the examination room...</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {sessions.map((student) => {
                 const isViolator = student.warningCount >= 3;
                 const isCompleted = student.status === 'COMPLETED';
@@ -338,45 +347,45 @@ export default function InvigilatorPage({ params }: { params: { accessCode: stri
                 return (
                   <div
                     key={student.id}
-                    className={`p-5 rounded-2xl border transition-all relative overflow-hidden ${
+                    className={`p-6 rounded-3xl border transition-all relative overflow-hidden shadow-lg ${
                       isViolator
-                        ? 'bg-red-950/20 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
+                        ? 'bg-red-950/20 border-red-500/60 shadow-[0_0_20px_rgba(239,68,68,0.15)]'
                         : isCompleted
-                        ? 'bg-[#1b2554]/10 border-[#1e295d] opacity-80'
-                        : 'bg-[#0e132c]/80 border-[#1e295d]'
+                        ? 'bg-[#0c1222] border-[#1a2440] opacity-85'
+                        : 'bg-[#0c1222] border-[#1a2440] hover:border-[#2a3a5c]'
                     }`}
                   >
-                    {/* Glowing highlight indicator */}
-                    <div className={`absolute top-0 left-0 right-0 h-[3px] ${
-                      isViolator ? 'bg-red-500' : isCompleted ? 'bg-accent' : 'bg-slate-700'
-                    }`}></div>
+                    {/* Glowing highlight indicator line */}
+                    <div className={`absolute top-0 left-0 right-0 h-1 ${
+                      isViolator ? 'bg-red-500' : isCompleted ? 'bg-[#bf4507]' : 'bg-emerald-500'
+                    }`} />
 
-                    <div className="flex justify-between items-start mb-2">
+                    <div className="flex justify-between items-start mb-3">
                       <div>
-                        <h3 className="font-bold text-sm text-[#ffffff]">{student.studentName}</h3>
+                        <h3 className="font-bold text-sm text-white">{student.studentName}</h3>
                         <p className="text-xs text-slate-400 font-mono mt-0.5">{student.studentNumber}</p>
                       </div>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-semibold font-mono ${
+                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase font-mono tracking-wider ${
                         isCompleted
-                          ? 'bg-accent/20 text-accent border border-accent/30'
-                          : 'bg-green-500/20 text-green-400 border border-green-500/30'
+                          ? 'bg-[#bf4507]/20 text-[#bf4507] border border-[#bf4507]/30'
+                          : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                       }`}>
                         {student.status}
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center mt-6 pt-3 border-t border-[#1e295d]/50 text-xs">
+                    <div className="flex justify-between items-center mt-6 pt-4 border-t border-[#1a2440] text-xs font-mono">
                       <div>
-                        <span className="text-slate-400">Total Submissions: </span>
-                        <span className="font-bold font-mono text-white">{student.submissions.length}</span>
+                        <span className="text-slate-400">Answers: </span>
+                        <span className="font-bold text-white">{student.submissions.length}</span>
                       </div>
                       
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-slate-400">Warnings:</span>
-                        <span className={`font-bold font-mono px-2 py-0.5 rounded ${
-                          student.warningCount > 0 ? 'bg-red-500/20 text-red-400' : 'bg-slate-800 text-slate-300'
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-400">Violations:</span>
+                        <span className={`font-bold px-2 py-0.5 rounded-md ${
+                          student.warningCount > 0 ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-[#070b18] text-slate-400 border border-[#161e36]'
                         }`}>
-                          {student.warningCount}
+                          {student.warningCount} / 3
                         </span>
                       </div>
                     </div>
@@ -388,34 +397,37 @@ export default function InvigilatorPage({ params }: { params: { accessCode: stri
         </main>
 
         {/* Right Side: Live Activity Feed */}
-        <aside className={`w-full lg:w-1/3 p-6 overflow-y-auto bg-[#0a0f25]/50 flex flex-col ${
+        <aside className={`w-full lg:w-1/3 p-6 overflow-y-auto bg-[#070b18] flex flex-col ${
           activeTab === 'feed' ? 'flex' : 'hidden lg:flex'
         }`}>
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-4 font-mono">
-            Live Room Feed
-          </h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-[#bf4507]">
+              Live Room Stream
+            </h2>
+            <span className="text-[10px] text-slate-500 font-mono">{activityLogs.length} events</span>
+          </div>
 
-          <div className="flex-1 space-y-4 overflow-y-auto">
+          <div className="flex-1 space-y-3 overflow-y-auto">
             {activityLogs.length === 0 ? (
-              <p className="text-xs text-slate-500 italic text-center pt-8">No live activities logged yet.</p>
+              <p className="text-xs text-slate-500 italic text-center pt-12 font-mono">No live activity events recorded yet.</p>
             ) : (
               activityLogs.map((log) => {
                 let badgeColor = 'bg-slate-800 text-slate-400';
                 if (log.activityType === 'WARNING') badgeColor = 'bg-red-500/20 text-red-400 border border-red-500/30';
-                if (log.activityType === 'COMPLETE') badgeColor = 'bg-accent/20 text-accent border border-accent/30';
-                if (log.activityType === 'JOIN') badgeColor = 'bg-green-500/20 text-green-400 border border-green-500/30';
+                if (log.activityType === 'COMPLETE') badgeColor = 'bg-[#bf4507]/20 text-[#bf4507] border border-[#bf4507]/30';
+                if (log.activityType === 'JOIN') badgeColor = 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
 
                 return (
-                  <div key={log.id} className="p-3 bg-[#0d1330] border border-[#1e295d] rounded-xl text-xs space-y-1">
+                  <div key={log.id} className="p-3.5 bg-[#0c1222] border border-[#1a2440] rounded-2xl text-xs space-y-1.5 shadow-sm">
                     <div className="flex justify-between items-center">
-                      <span className="font-bold text-slate-300">{log.studentName}</span>
-                      <span className="text-[10px] text-slate-500">{new Date(log.timestamp).toLocaleTimeString()}</span>
+                      <span className="font-bold text-white">{log.studentName}</span>
+                      <span className="text-[10px] text-slate-500 font-mono">{new Date(log.timestamp).toLocaleTimeString()}</span>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-semibold uppercase ${badgeColor}`}>
+                      <span className={`px-2 py-0.5 rounded-md text-[9px] font-mono font-extrabold uppercase ${badgeColor}`}>
                         {log.activityType}
                       </span>
-                      <p className="text-slate-400 text-[11px] leading-tight flex-1">{log.details}</p>
+                      <p className="text-slate-300 text-[11px] leading-tight flex-1">{log.details}</p>
                     </div>
                   </div>
                 );

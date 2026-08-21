@@ -6,9 +6,18 @@ import { AuthService } from './auth.service';
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   constructor(private authService: AuthService) {
-    // Sanitize callback URL in case of accidental double https:// prefix
-    const rawCallback = process.env.GOOGLE_CALLBACK_URL as string;
-    const callbackURL = rawCallback ? rawCallback.replace(/^https?:\/\/https?:\/\//, 'https://') : rawCallback;
+    const rawCallback = process.env.GOOGLE_CALLBACK_URL;
+    let callbackURL = rawCallback || 'http://localhost:3002/auth/google/callback';
+
+    // Auto-detect production cloud environment (e.g. Render) and override localhost fallback
+    if (process.env.RENDER || process.env.NODE_ENV === 'production') {
+      if (!rawCallback || rawCallback.includes('localhost')) {
+        callbackURL = 'https://eii-g5vr.onrender.com/auth/google/callback';
+      }
+    }
+
+    // Sanitize callback URL formatting
+    callbackURL = callbackURL.replace(/^https?:\/\/https?:\/\//, 'https://');
 
     super({
       clientID: process.env.GOOGLE_CLIENT_ID as string,
