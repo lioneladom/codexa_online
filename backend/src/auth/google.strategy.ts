@@ -19,8 +19,11 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     // Sanitize callback URL formatting
     callbackURL = callbackURL.replace(/^https?:\/\/https?:\/\//, 'https://');
 
-    const clientID = process.env.GOOGLE_CLIENT_ID || '';
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
+    const rawClientID = process.env.GOOGLE_CLIENT_ID || '';
+    const rawClientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
+
+    const clientID = rawClientID.trim().replace(/^["']|["']$/g, '');
+    const clientSecret = rawClientSecret.trim().replace(/^["']|["']$/g, '');
 
     super({
       clientID,
