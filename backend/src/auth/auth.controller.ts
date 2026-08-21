@@ -29,6 +29,25 @@ export class AuthController {
     // Initiates the Google OAuth flow
   }
 
+  @Get('google/debug')
+  googleDebug() {
+    const rawId = process.env.GOOGLE_CLIENT_ID || '';
+    const rawSecret = process.env.GOOGLE_CLIENT_SECRET || '';
+    const callback = process.env.GOOGLE_CALLBACK_URL || '';
+    const baseUrl = process.env.BASE_URL || '';
+
+    return {
+      clientIdLength: rawId.length,
+      clientIdPrefix: rawId.substring(0, 15),
+      clientSecretLength: rawSecret.length,
+      clientSecretPrefix: rawSecret.substring(0, 8),
+      callbackUrl: callback,
+      baseUrl: baseUrl,
+      renderEnv: process.env.RENDER || null,
+      nodeEnv: process.env.NODE_ENV || null,
+    };
+  }
+
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
   googleAuthRedirect(@Req() req, @Res() res) {
