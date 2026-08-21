@@ -8,8 +8,15 @@ export class GoogleAuthGuard extends AuthGuard('google') {
     const req = context.switchToHttp().getRequest();
     const baseUrl = process.env.BASE_URL || 'https://eii-tau.vercel.app';
 
+    if (!process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_CLIENT_ID) {
+      const missingVar = !process.env.GOOGLE_CLIENT_SECRET ? 'GOOGLE_CLIENT_SECRET' : 'GOOGLE_CLIENT_ID';
+      console.error(`[CRITICAL] Missing ${missingVar} in Render environment settings!`);
+      res.redirect(`${baseUrl}/login?error=google_auth_failed&detail=${encodeURIComponent(`Missing ${missingVar} in Render Dashboard Environment Settings`)}`);
+      return null;
+    }
+
     if (err || !user) {
-      const errMsg = err?.message || info?.message || (err ? String(err) : 'Authentication failed');
+      const errMsg = err?.message || info?.message || (err ? String(err) : 'Google rejected token exchange (Check Redirect URI in Google Cloud Console)');
       console.error('[Google OAuth Error Detail]', {
         errMessage: errMsg,
         infoMessage: info?.message || info,
