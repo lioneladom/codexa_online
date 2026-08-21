@@ -17,11 +17,12 @@ export class GoogleAuthGuard extends AuthGuard('google') {
 
     if (err || !user) {
       const queryErr = req?.query?.error ? `Google Callback Error: ${req.query.error} (${req.query.error_description || 'No description'})` : null;
-      const errMsg = queryErr || err?.message || info?.message || (err ? String(err) : 'Google rejected token exchange (Check Redirect URI in Google Cloud Console)');
+      const infoMsg = info?.message || (typeof info === 'string' ? info : null);
+      const errMsg = queryErr || err?.message || infoMsg || (err ? String(err) : 'Authentication failed during callback processing');
       console.error('[Google OAuth Error Detail]', {
         queryErr,
         errMessage: errMsg,
-        infoMessage: info?.message || info,
+        infoMessage: infoMsg || info,
         query: req?.query,
         headersHost: req?.headers?.host,
       });

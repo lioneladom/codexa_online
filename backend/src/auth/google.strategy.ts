@@ -63,9 +63,9 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       
       const result = await this.authService.googleLogin(user);
       done(null, result);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error during GoogleStrategy validate:', err);
-      done(null, false);
+      done(err, false);
     }
   }
 }
