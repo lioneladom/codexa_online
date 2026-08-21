@@ -29,7 +29,7 @@ export class AuthController {
     // Initiates the Google OAuth flow
   }
 
-  @Get('google/debug')
+  @Get('debug-env')
   googleDebug() {
     const rawId = process.env.GOOGLE_CLIENT_ID || '';
     const rawSecret = process.env.GOOGLE_CLIENT_SECRET || '';
