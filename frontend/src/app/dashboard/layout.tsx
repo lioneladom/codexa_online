@@ -169,52 +169,52 @@ export default function DashboardLayout({
       )}
       
       {/* Main content pane */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden bg-[#040813]">
         {/* Top Header Bar */}
-        <header className="bg-white border-b border-[#e2e8f0] px-6 py-4 flex items-center justify-between flex-shrink-0">
+        <header className="bg-[#0d1224] border-b border-[#1e295d] px-6 py-4 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="text-slate-600 hover:text-slate-900 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+              className="text-[#94a3b8] hover:text-white p-1.5 rounded-lg hover:bg-[#1e295d] transition-colors"
               aria-label="Toggle Sidebar"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <h2 className="text-lg font-bold text-slate-800 hidden sm:block">
+            <h2 className="text-lg font-bold text-[#f0f2f8] hidden sm:block">
               Lecturer Workspace
             </h2>
           </div>
           <div className="flex items-center gap-3">
-            <div className="text-xs text-slate-500 font-medium font-mono bg-slate-100 border border-slate-200 px-3 py-1 rounded-lg">
+            <div className="text-xs text-[#94a3b8] font-medium font-mono bg-[#070b18] border border-[#1e295d] px-3 py-1 rounded-lg">
               Codexa System
             </div>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto bg-slate-50 text-[#1a202c]">
+        <main className="flex-1 overflow-y-auto bg-[#040813] text-[#f0f2f8]">
           {children}
         </main>
       </div>
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 z-50 bg-[#000000]/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-[#e2e8f0]/80 rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center">
-            <div className="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100">
+        <div className="fixed inset-0 z-50 bg-[#000000]/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0c1222] border border-[#1a2440] rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center text-[#f0f2f8]">
+            <div className="w-12 h-12 bg-red-950/50 text-red-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/30">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
             </div>
-            <h3 className="text-lg font-bold text-slate-900">Sign Out</h3>
-            <p className="text-sm text-slate-500 mt-2">
+            <h3 className="text-lg font-bold text-white">Sign Out</h3>
+            <p className="text-sm text-[#7b8aaa] mt-2">
               Are you sure you want to sign out of your lecturer session?
             </p>
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-xl hover:bg-slate-50 transition-all"
+                className="flex-1 px-4 py-2 border border-[#1a2440] text-[#7b8aaa] hover:text-white text-xs font-semibold rounded-xl hover:bg-[#161e36] transition-all"
               >
                 Cancel
               </button>
@@ -223,7 +223,7 @@ export default function DashboardLayout({
                   setShowLogoutConfirm(false);
                   handleLogout();
                 }}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-xl transition-all"
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-xl transition-all shadow-md"
               >
                 Sign Out
               </button>

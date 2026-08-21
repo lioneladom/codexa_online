@@ -108,69 +108,69 @@ export default function DashboardPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <div className="bg-white border border-[#e2e8f0] rounded-2xl p-5 shadow-sm hover:shadow-md transition-all">
-          <div className="text-sm font-semibold text-slate-500">Total Exams</div>
-          <div className="text-3xl font-bold text-[#0a0f24] mt-2">{stats.totalExams}</div>
-          <div className="text-xs text-slate-400 mt-1">{stats.draftExams} Drafts, {stats.activeExams} Active</div>
+        <div className="bg-[#0c1222] border border-[#1a2440] rounded-2xl p-5 shadow-sm hover:border-accent/40 transition-all">
+          <div className="text-xs font-bold uppercase tracking-wider text-[#7b8aaa]">Total Exams</div>
+          <div className="text-3xl font-extrabold text-[#f0f2f8] mt-2">{stats.totalExams}</div>
+          <div className="text-xs text-[#7b8aaa] mt-1">{stats.draftExams} Drafts, {stats.activeExams} Active</div>
         </div>
         
-        <div className="bg-white border border-[#e2e8f0] rounded-2xl p-5 shadow-sm hover:shadow-md transition-all border-l-4 border-l-accent">
-          <div className="text-sm font-semibold text-slate-500">Active Sessions</div>
-          <div className="text-3xl font-bold text-[#0a0f24] mt-2">{stats.activeSessions}</div>
-          <div className="text-xs text-slate-400 mt-1">Candidates currently online</div>
+        <div className="bg-[#0c1222] border border-[#1a2440] rounded-2xl p-5 shadow-sm hover:border-accent/40 transition-all border-l-4 border-l-accent">
+          <div className="text-xs font-bold uppercase tracking-wider text-[#7b8aaa]">Active Sessions</div>
+          <div className="text-3xl font-extrabold text-[#f0f2f8] mt-2">{stats.activeSessions}</div>
+          <div className="text-xs text-[#7b8aaa] mt-1">Candidates currently online</div>
         </div>
 
-        <div className="bg-white border border-[#e2e8f0] rounded-2xl p-5 shadow-sm hover:shadow-md transition-all">
-          <div className="text-sm font-semibold text-slate-500">Completed Sessions</div>
-          <div className="text-3xl font-bold text-[#0a0f24] mt-2">{stats.completedSessions}</div>
-          <div className="text-xs text-slate-400 mt-1">Exam submissions completed</div>
+        <div className="bg-[#0c1222] border border-[#1a2440] rounded-2xl p-5 shadow-sm hover:border-accent/40 transition-all">
+          <div className="text-xs font-bold uppercase tracking-wider text-[#7b8aaa]">Completed Sessions</div>
+          <div className="text-3xl font-extrabold text-[#f0f2f8] mt-2">{stats.completedSessions}</div>
+          <div className="text-xs text-[#7b8aaa] mt-1">Exam submissions completed</div>
         </div>
 
-        <div className="bg-white border border-[#e2e8f0] rounded-2xl p-5 shadow-sm hover:shadow-md transition-all border-l-4 border-l-red-500">
-          <div className="text-sm font-semibold text-slate-500">Security Flags</div>
-          <div className="text-3xl font-bold text-red-600 mt-2">{stats.warningCount}</div>
-          <div className="text-xs text-slate-400 mt-1">Tab switches / violations</div>
+        <div className="bg-[#0c1222] border border-[#1a2440] rounded-2xl p-5 shadow-sm hover:border-accent/40 transition-all border-l-4 border-l-red-500">
+          <div className="text-xs font-bold uppercase tracking-wider text-red-400">Security Flags</div>
+          <div className="text-3xl font-extrabold text-red-400 mt-2">{stats.warningCount}</div>
+          <div className="text-xs text-[#7b8aaa] mt-1">Tab switches / violations</div>
         </div>
 
-        <div className="bg-white border border-[#e2e8f0] rounded-2xl p-5 shadow-sm hover:shadow-md transition-all">
-          <div className="text-sm font-semibold text-slate-500">Pending Reviews</div>
-          <div className="text-3xl font-bold text-[#0a0f24] mt-2">{stats.pendingReviews}</div>
-          <div className="text-xs text-slate-400 mt-1">Theory answers to grade</div>
+        <div className="bg-[#0c1222] border border-[#1a2440] rounded-2xl p-5 shadow-sm hover:border-accent/40 transition-all">
+          <div className="text-xs font-bold uppercase tracking-wider text-[#7b8aaa]">Pending Reviews</div>
+          <div className="text-3xl font-extrabold text-[#f0f2f8] mt-2">{stats.pendingReviews}</div>
+          <div className="text-xs text-[#7b8aaa] mt-1">Theory answers to grade</div>
         </div>
       </div>
 
       {/* Main Panel */}
-      <div className="bg-white border border-[#e2e8f0] rounded-2xl overflow-hidden shadow-sm">
-        <div className="px-6 py-4 border-b border-[#e2e8f0] flex justify-between items-center bg-slate-50">
-          <h2 className="text-lg font-bold text-[#0a0f24]">Exam Management</h2>
+      <div className="bg-[#0c1222] border border-[#1a2440] rounded-2xl overflow-hidden shadow-md">
+        <div className="px-6 py-4 border-b border-[#1a2440] flex justify-between items-center bg-[#070b18]">
+          <h2 className="text-base font-bold text-[#f0f2f8]">Exam Management</h2>
           <Link href="/dashboard/exams" className="text-xs text-accent hover:underline font-semibold">
             View All Exams →
           </Link>
         </div>
         
         {loading ? (
-          <div className="text-center py-12 text-slate-500">
+          <div className="text-center py-12 text-[#7b8aaa]">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-accent mb-2"></div>
             <p>Loading examinations data...</p>
           </div>
         ) : exams.length === 0 ? (
-          <div className="p-12 text-center text-slate-500">
-            <p className="text-lg">No examinations registered yet.</p>
-            <p className="text-sm text-slate-400 mt-1">Create your first examination template to get started.</p>
+          <div className="p-12 text-center text-[#7b8aaa]">
+            <p className="text-lg font-medium text-[#f0f2f8]">No examinations registered yet.</p>
+            <p className="text-sm text-[#7b8aaa] mt-1">Create your first examination template to get started.</p>
             <Link
               href="/dashboard/exams/create"
-              className="inline-block mt-4 bg-accent hover:bg-accent/90 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-all"
+              className="inline-block mt-4 bg-accent hover:bg-accent/90 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-all shadow-md"
             >
               New Exam Template
             </Link>
           </div>
         ) : (
-          <div className="divide-y divide-[#e2e8f0]">
+          <div className="divide-y divide-[#1a2440]">
             {exams.map((exam) => (
-              <div key={exam.id} className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition-all">
+              <div key={exam.id} className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#141c38]/40 transition-all">
                 <div>
-                  <h3 className="font-bold text-[#0a0f24]">{exam.title}</h3>
-                  <p className="text-xs text-slate-500 mt-1 font-mono">
+                  <h3 className="font-bold text-[#f0f2f8]">{exam.title}</h3>
+                  <p className="text-xs text-[#7b8aaa] mt-1 font-mono">
                     Course Code: {exam.courseCode} • Created: {new Date(exam.createdAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -178,8 +178,8 @@ export default function DashboardPage() {
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       exam.status === 'PUBLISHED'
-                        ? 'bg-green-100 text-green-800 border border-green-200'
-                        : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                        ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/40'
+                        : 'bg-amber-950/60 text-amber-400 border border-amber-500/40'
                     }`}
                   >
                     {exam.status}
@@ -188,14 +188,14 @@ export default function DashboardPage() {
                   {exam.status === 'PUBLISHED' ? (
                     <Link
                       href={`/dashboard/exams/${exam.id}/monitor`}
-                      className="bg-accent hover:bg-accent/90 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-all"
+                      className="bg-accent hover:bg-accent/90 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-all"
                     >
                       Monitor Live
                     </Link>
                   ) : (
                     <Link
                       href={`/dashboard/exams`}
-                      className="text-slate-500 hover:text-slate-800 text-xs font-semibold hover:underline"
+                      className="text-[#7b8aaa] hover:text-white text-xs font-semibold hover:underline"
                     >
                       Publish Exam
                     </Link>

@@ -4,9 +4,12 @@ export const getApiUrl = (): string => {
   }
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    return `http://${hostname}:3002`;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return `http://${hostname}:3002`;
+    }
   }
-  return 'http://localhost:3002';
+  // Default live cloud backend on Render
+  return 'https://eii-g5vr.onrender.com';
 };
 
 export const getSocketUrl = (): string => {
