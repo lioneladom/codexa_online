@@ -25,20 +25,32 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     done: VerifyCallback,
   ): Promise<any> {
     try {
-      const { name, emails } = profile;
+      if (!profile) {
+        return done(null, false);
+      }
+
+      const emails = profile.emails;
+      const name = profile.name;
+      const email = (emails && emails[0] && emails[0].value) ? emails[0].value : `${profile.id}@google.com`;
+      const firstName = name ? (name.givenName || '') : '';
+      const lastName = name ? (name.familyName || '') : '';
+      const fullName = profile.displayName || (`${firstName} ${lastName}`.trim()) || 'Google User';
+      const picture = (profile.photos && profile.photos[0] && profile.photos[0].value) ? profile.photos[0].value : '';
+
       const user = {
-        email: emails[0].value,
-        firstName: name.givenName,
-        lastName: name.familyName,
-        fullName: profile.displayName || `${name.givenName} ${name.familyName}`,
-        picture: profile.photos[0].value,
+        email,
+        firstName,
+        lastName,
+        fullName,
+        picture,
         accessToken,
       };
       
       const result = await this.authService.googleLogin(user);
       done(null, result);
     } catch (err) {
-      done(err as Error, false);
+      console.error('Error during GoogleStrategy validate:', err);
+      done(null, false);
     }
   }
 }
