@@ -32,9 +32,10 @@ export default function LoginPage() {
     const token = params.get('token');
     const userStr = params.get('user');
     const oauthError = params.get('error');
+    const oauthDetail = params.get('detail');
 
     if (oauthError) {
-      setError('Google Sign-In failed or was cancelled. Please try again.');
+      setError(oauthDetail ? `Google Sign-In Error: ${oauthDetail}` : 'Google Sign-In failed or was cancelled. Please try again.');
     }
 
     if (token && userStr) {

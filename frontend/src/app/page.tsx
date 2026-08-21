@@ -27,10 +27,16 @@ export default function EntrancePage() {
     };
     pingBackend();
 
-    // Check if returning from Google OAuth redirect with token
+    // Check if returning from Google OAuth redirect with token or error
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
     const userStr = params.get('user');
+    const oauthError = params.get('error');
+    const oauthDetail = params.get('detail');
+
+    if (oauthError) {
+      setError(oauthDetail ? `Google Sign-In Error: ${oauthDetail}` : 'Google Sign-In failed or was cancelled. Please try again.');
+    }
 
     if (token && userStr) {
       try {

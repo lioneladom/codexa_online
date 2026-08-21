@@ -10,7 +10,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     let callbackURL = rawCallback || 'http://localhost:3002/auth/google/callback';
 
     // Auto-detect production cloud environment (e.g. Render) and override localhost fallback
-    if (process.env.RENDER || process.env.NODE_ENV === 'production') {
+    if (process.env.RENDER || process.env.NODE_ENV === 'production' || typeof window === 'undefined') {
       if (!rawCallback || rawCallback.includes('localhost')) {
         callbackURL = 'https://eii-g5vr.onrender.com/auth/google/callback';
       }
@@ -19,9 +19,12 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     // Sanitize callback URL formatting
     callbackURL = callbackURL.replace(/^https?:\/\/https?:\/\//, 'https://');
 
+    const clientID = process.env.GOOGLE_CLIENT_ID || '';
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
+
     super({
-      clientID: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      clientID,
+      clientSecret,
       callbackURL,
       scope: ['email', 'profile'],
     });

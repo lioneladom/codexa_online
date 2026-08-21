@@ -9,13 +9,14 @@ export class GoogleAuthGuard extends AuthGuard('google') {
     const baseUrl = process.env.BASE_URL || 'https://eii-tau.vercel.app';
 
     if (err || !user) {
+      const errMsg = err?.message || info?.message || (err ? String(err) : 'Authentication failed');
       console.error('[Google OAuth Error Detail]', {
-        errMessage: err?.message || err,
+        errMessage: errMsg,
         infoMessage: info?.message || info,
         query: req?.query,
         headersHost: req?.headers?.host,
       });
-      res.redirect(`${baseUrl}/login?error=google_auth_failed`);
+      res.redirect(`${baseUrl}/login?error=google_auth_failed&detail=${encodeURIComponent(errMsg)}`);
       return null;
     }
     return user;
