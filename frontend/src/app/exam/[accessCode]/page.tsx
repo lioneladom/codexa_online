@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Editor from '@monaco-editor/react';
 import RunTerminal from '@/components/RunTerminal';
 import { getApiUrl } from '@/config/api';
+import CodexaLogo from '@/components/CodexaLogo';
+import { TINT_PRESETS, getActiveMode, getActiveTint, applyThemeMode, getActiveTheme } from '@/config/themes';
 
 interface TestCase {
   id?: string;
@@ -14,7 +17,7 @@ interface TestCase {
 
 interface Question {
   id: string;
-  type: 'PROGRAMMING' | 'MULTIPLE_CHOICE' | 'SHORT_ANSWER' | 'LONG_ANSWER' | 'FILL_IN_THE_BLANK';
+  type: 'PROGRAMMING' | 'MULTIPLE_CHOICE' | 'SHORT_ANSWER' | 'LONG_ANSWER' | 'FILL_IN_THE_BLANK' | 'TRUE_FALSE';
   title: string;
   problemStatement: string;
   constraints?: string;
@@ -67,10 +70,23 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
   const [editorWidthPercent, setEditorWidthPercent] = useState(50);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [showExamStoppedModal, setShowExamStoppedModal] = useState(false);
+  const [activeTheme, setActiveTheme] = useState('dark');
+  const [showThemeModal, setShowThemeModal] = useState(false);
   
   const isResizingSidebar = useRef(false);
   const isResizingEditor = useRef(false);
   const lastSavedAnswersRef = useRef<any>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    applyThemeMode('dark', '#bf4507');
+    setActiveTheme('dark');
+    const handleThemeChange = () => {
+      setActiveTheme(getActiveTheme());
+    };
+    window.addEventListener('codexa_theme_change', handleThemeChange);
+    return () => window.removeEventListener('codexa_theme_change', handleThemeChange);
+  }, []);
 
   const startResizeSidebar = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -300,7 +316,6 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
       setWarningCount(prev => {
         const newCount = prev + 1;
         if (newCount >= 3) {
-          alert('Exam Session Locked! Too many security violations detected. Your paper is being auto-submitted.');
           submitFinalExam(currentSessionId);
         } else {
           setShowWarningAlert(true);
@@ -437,8 +452,6 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
     }
   };
 
-
-
   // Submit single question answer to backend (graded or saved)
   const handleSubmitAnswer = async (question: Question) => {
     const answerVal = answers[question.id];
@@ -474,7 +487,6 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
   };
 
   const autoSubmitExam = () => {
-    alert('Examination timer expired! Your answers are being auto-submitted.');
     submitFinalExam();
   };
 
@@ -507,7 +519,7 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
   // Inline Blank Replacer Logic
   const renderBlankStatement = (q: Question) => {
     const text = q.problemStatement;
-    if (!text.includes('[blank]')) return <p className="whitespace-pre-wrap leading-relaxed">{text}</p>;
+    if (!text.includes('[blank]')) return <p className="whitespace-pre-wrap leading-relaxed text-sm text-[#f0f2f8]">{text}</p>;
 
     const parts = text.split('[blank]');
     const currentAnswer = answers[q.id] || '';
@@ -515,12 +527,12 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
 
     const handleBlankTextChange = (index: number, val: string) => {
       const updated = [...answersArray];
-      updated[index] = val.trim();
+      updated[index] = val;
       setAnswers(prev => ({ ...prev, [q.id]: updated.join(',') }));
     };
 
     return (
-      <div className="whitespace-pre-wrap leading-relaxed text-sm">
+      <div className="whitespace-pre-wrap leading-relaxed text-sm text-[#f0f2f8]">
         {parts.map((part, index) => (
           <span key={index}>
             {part}
@@ -530,7 +542,7 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
                 value={answersArray[index] || ''}
                 onChange={(e) => handleBlankTextChange(index, e.target.value)}
                 placeholder={`blank ${index + 1}`}
-                className="mx-1 px-3 py-1 bg-white border border-[#e2e8f0] text-[#0a0f24] font-mono text-sm focus:outline-none focus:border-accent rounded-lg w-32 shadow-sm transition-all"
+                className="mx-1 px-3 py-1 bg-[#070b18] border border-[#1a2440] text-white font-mono text-sm focus:outline-none focus:border-[#bf4507] rounded-lg w-32 shadow-sm transition-all"
               />
             )}
           </span>
@@ -542,33 +554,39 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
   /* Screen 1: Candidate Access Page */
   if (step === 'entry') {
     return (
-      <main className="flex min-h-screen items-center justify-center p-6 bg-slate-50 text-slate-800">
-        <div className="w-full max-w-md bg-white border border-slate-200/80 p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
+      <main className="flex min-h-screen items-center justify-center p-6 bg-[#030712] text-[#f0f2f8] selection:bg-[#bf4507]/30 selection:text-[#bf4507] relative overflow-hidden" style={{ colorScheme: 'dark' }}>
+        {/* Subtle Background Glow Grid */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#1b2852]/20 via-[#030712]/80 to-[#030712] pointer-events-none" />
+
+        <div className="w-full max-w-md bg-[#0c1222] border border-[#1a2440] p-8 rounded-3xl shadow-2xl relative z-10 overflow-hidden backdrop-blur-xl">
+          {/* Top Accent Gradient */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#bf4507] to-transparent" />
           
           <form className="space-y-5" onSubmit={handleStartExam}>
-            <div className="text-center mb-6">
-              <h1 className="text-3xl font-extrabold tracking-wider bg-gradient-to-r from-slate-900 to-[#1b2554] bg-clip-text text-transparent font-sans">
-                CODEXA
-              </h1>
-              <span className="inline-block mt-2 text-[10px] bg-slate-100 border border-slate-200 text-slate-600 font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+            <div className="text-center mb-6 flex flex-col items-center">
+              <CodexaLogo size="lg" layout="vertical" className="mb-2" />
+              <span className="inline-block mt-2 text-[10px] bg-[#bf4507]/15 border border-[#bf4507]/30 text-[#bf4507] font-bold px-3 py-1 rounded-full uppercase tracking-widest">
                 Student Exam Verification
               </span>
               {exam && (
-                <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700">
+                <div className="mt-4 p-3 bg-[#070b18] border border-[#1a2440] rounded-xl text-sm font-semibold text-white w-full">
                   {exam.title} ({exam.courseCode})
                 </div>
               )}
             </div>
 
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl">
-                {error}
+              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 text-red-400 text-xs rounded-2xl flex items-center gap-2">
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{error}</span>
               </div>
             )}
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2">
+                <label className="block text-[10px] uppercase tracking-widest text-[#bf4507] font-extrabold mb-2">
                   Candidate Full Name
                 </label>
                 <input
@@ -576,13 +594,13 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
                   placeholder="e.g. Jane Doe"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className="w-full px-4 py-3 bg-[#070b18] border border-[#161e36] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-[#bf4507] transition-all text-sm"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2">
+                <label className="block text-[10px] uppercase tracking-widest text-[#bf4507] font-extrabold mb-2">
                   Candidate Index / Student Number
                 </label>
                 <input
@@ -590,14 +608,14 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
                   placeholder="e.g. 20261908"
                   value={studentNumber}
                   onChange={(e) => setStudentNumber(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className="w-full px-4 py-3 bg-[#070b18] border border-[#161e36] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-[#bf4507] transition-all text-sm font-mono"
                   required
                 />
               </div>
 
               {exam?.studentPassword && (
                 <div>
-                  <label className="block text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2">
+                  <label className="block text-[10px] uppercase tracking-widest text-[#bf4507] font-extrabold mb-2">
                     Exam Room Session Password
                   </label>
                   <input
@@ -605,7 +623,7 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full px-4 py-3 bg-[#070b18] border border-[#161e36] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-[#bf4507] transition-all text-sm"
                     required
                   />
                 </div>
@@ -615,7 +633,7 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#0a0f24] hover:bg-[#1b2554] text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-md active:scale-[0.98] disabled:opacity-50"
+              className="w-full bg-[#bf4507] hover:bg-[#c24709] text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-[0_4px_20px_rgba(191,69,7,0.3)] active:scale-[0.98] disabled:opacity-50 text-sm tracking-wide mt-2"
             >
               {loading ? 'Starting Examination Room...' : 'Start Assessment'}
             </button>
@@ -628,34 +646,35 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
   /* Screen 2: Finished Page */
   if (step === 'completed') {
     return (
-      <main className="min-h-screen bg-[#f7fafc] p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="text-6xl mb-4 flex justify-center">
-              <svg className="w-20 h-20 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h1 className="text-3xl font-bold text-[#0a0f24]">Examination Completed</h1>
-            <p className="text-slate-500 mt-2">
-              Thank you. Your answers have been uploaded to the Codexa host database successfully.
-            </p>
-          </div>
+      <main className="min-h-screen bg-[#030712] text-[#f0f2f8] selection:bg-[#bf4507]/30 selection:text-[#bf4507] p-6 flex items-center justify-center relative overflow-hidden" style={{ colorScheme: 'dark' }}>
+        {/* Subtle Background Glow Grid */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#1b2852]/20 via-[#030712]/80 to-[#030712] pointer-events-none" />
 
-          <div className="text-center bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-8">
-            <p className="text-slate-500 mb-6">Results will be available at a later time.</p>
-            <button
-              onClick={() => {
-                localStorage.clear();
-                window.location.href = '/';
-              }}
-              className="bg-primary hover:bg-primary/90 text-white font-semibold px-8 py-3 rounded-xl transition-all shadow-md"
-            >
-              Sign Out
-            </button>
-          </div>
+        <div className="max-w-md w-full bg-[#0c1222] border border-[#1a2440] rounded-3xl p-8 text-center shadow-2xl relative z-10 overflow-hidden backdrop-blur-xl">
+          {/* Top Accent Gradient */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#bf4507] to-transparent" />
 
-          <div className="mt-6 text-center text-xs text-slate-400 uppercase tracking-widest">
+          <div className="text-6xl mb-4 flex justify-center">
+            <svg className="w-16 h-16 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-2">Examination Completed</h1>
+          <p className="text-[#7b8aaa] text-sm mt-2 mb-6">
+            Thank you. Your answers have been uploaded to the Codexa host database successfully.
+          </p>
+
+          <button
+            onClick={() => {
+              localStorage.clear();
+              window.location.href = `/exam/${params.accessCode}`;
+            }}
+            className="w-full bg-[#bf4507] hover:bg-[#c24709] text-white font-bold px-8 py-3.5 rounded-xl transition-all shadow-[0_4px_20px_rgba(191,69,7,0.3)] text-sm tracking-wide"
+          >
+            Sign Out
+          </button>
+
+          <div className="mt-6 text-center text-[10px] text-[#7b8aaa] uppercase tracking-widest font-mono">
             Security Status: Verified • Session Saved
           </div>
         </div>
@@ -665,11 +684,11 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
 
   /* Screen 3: Exam Workspace Screen */
   return (
-    <div className="flex flex-col h-screen bg-[#f7fafc]">
+    <div className="flex flex-col h-screen bg-[#030712] text-[#f0f2f8]">
       {/* Warning Overlay banner */}
       {showWarningAlert && (
         <div className="fixed inset-0 z-50 bg-[#000000]/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-red-950 border border-red-500 rounded-2xl max-w-md p-6 text-center text-white">
+          <div className="bg-red-950/90 border border-red-500 rounded-2xl max-w-md p-6 text-center text-white shadow-2xl">
             <div className="flex justify-center mb-3">
               <svg className="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -685,7 +704,7 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
             </p>
             <button
               onClick={() => setShowWarningAlert(false)}
-              className="mt-6 px-6 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl transition-all"
+              className="mt-6 px-6 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl transition-all shadow-md"
             >
               Acknowledge and Resume Exam
             </button>
@@ -694,10 +713,10 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
       )}
 
       {/* Main Workspace Header */}
-      <header className="bg-[#0a0f24] text-white px-6 py-4 border-b border-[#1e295d] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-md">
+      <header className="bg-[#070b18] text-white px-6 py-4 border-b border-[#1a2440] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-md">
         <div>
-          <h1 className="text-lg font-bold font-sans tracking-wide text-[#ffffff]">{exam?.title}</h1>
-          <div className="flex flex-wrap gap-2 text-xs text-slate-400 mt-0.5 font-mono">
+          <h1 className="text-lg font-bold font-sans tracking-wide text-white">{exam?.title}</h1>
+          <div className="flex flex-wrap gap-2 text-xs text-[#7b8aaa] mt-0.5 font-mono">
             <span>Course: {exam?.courseCode}</span>
             <span>•</span>
             <span>Candidate: {name} ({studentNumber})</span>
@@ -706,14 +725,14 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
 
         <div className="flex flex-wrap items-center justify-between md:justify-end gap-6 w-full md:w-auto">
           <div className="text-lg font-mono flex items-center gap-2">
-            <span className="text-xs uppercase tracking-wider text-slate-400">Time Left:</span>
-            <span className={`font-bold px-3 py-1 rounded-lg ${timeLeft < 300 ? 'bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse' : 'bg-[#1b2554] border border-[#2b3a7a]'}`}>
+            <span className="text-xs uppercase tracking-wider text-[#7b8aaa]">Time Left:</span>
+            <span className={`font-bold px-3 py-1 rounded-lg ${timeLeft < 300 ? 'bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse' : 'bg-[#0c1222] border border-[#1a2440] text-white'}`}>
               {formatTime(timeLeft)}
             </span>
           </div>
           
           <div className="flex items-center gap-3 w-full md:w-auto">
-            <span className="text-xs text-slate-400 font-mono">
+            <span className="text-xs text-[#7b8aaa] font-mono">
               {Object.values(submissionStatuses).includes('SAVING') ? 'Saving changes...' : 'All answers saved'}
             </span>
             <button
@@ -721,6 +740,17 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
               className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-xl text-xs transition-all shadow-md w-full md:w-auto"
             >
               Submit Exam
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowThemeModal(true)}
+              className="p-2 bg-[#0c1222] hover:bg-[#161e36] border border-[#1a2440] text-white rounded-xl transition-all shadow-md"
+              title="Appearance Settings"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
             </button>
           </div>
         </div>
@@ -733,21 +763,21 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
           style={{ width: isQuestionsSidebarOpen && typeof window !== 'undefined' && window.innerWidth >= 1024 ? `${sidebarWidth}px` : undefined }}
           className={`${
             isQuestionsSidebarOpen ? 'lg:opacity-100' : 'lg:w-0 lg:opacity-0 lg:overflow-hidden lg:border-r-0'
-          } bg-[#0d1430] border-r border-[#1e295d] p-4 flex flex-col justify-between overflow-y-auto transition-all duration-300 ${
+          } bg-[#070b18] border-r border-[#1a2440] p-4 flex flex-col justify-between overflow-y-auto transition-all duration-300 ${
             activeTab === 'questions' ? 'flex flex-1 w-full lg:flex-none' : 'hidden lg:flex'
           }`}
         >
           <div>
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4 font-mono">Questions</h2>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-[#7b8aaa] mb-4 font-mono">Questions</h2>
             <div className="grid grid-cols-4 gap-2">
               {exam?.questions.map((q, idx) => {
                 const status = submissionStatuses[q.id] || 'DRAFT';
                 const isActive = idx === currentQuestionIndex;
                 const isSaved = status === 'SAVED';
 
-                let bgClass = 'bg-slate-900 border-slate-700 text-slate-400 hover:bg-slate-800';
+                let bgClass = 'bg-[#0c1222] border-[#1a2440] text-[#7b8aaa] hover:bg-[#161e36]';
                 if (isActive) {
-                  bgClass = 'bg-primary border-accent text-white shadow-md ring-2 ring-accent/35';
+                  bgClass = 'bg-[#bf4507] border-[#bf4507] text-white shadow-md ring-2 ring-[#bf4507]/35';
                 } else if (isSaved) {
                   bgClass = 'bg-emerald-950/45 border-emerald-500 text-emerald-300 hover:bg-emerald-950/60';
                 } else if (status === 'SAVING') {
@@ -775,10 +805,10 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
           </div>
 
           {/* Security alerts log status */}
-          <div className="pt-4 border-t border-[#1e295d] text-xs text-slate-400 mt-6">
+          <div className="pt-4 border-t border-[#1a2440] text-xs text-[#7b8aaa] mt-6">
             <div className="flex justify-between items-center">
               <span>Violations logged:</span>
-              <span className={warningCount > 0 ? 'text-red-400 font-bold' : 'text-green-400'}>{warningCount}</span>
+              <span className={warningCount > 0 ? 'text-red-400 font-bold' : 'text-emerald-400'}>{warningCount}</span>
             </div>
           </div>
         </aside>
@@ -786,18 +816,18 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
         {isQuestionsSidebarOpen && (
           <div
             onMouseDown={startResizeSidebar}
-            className="hidden lg:block w-1 hover:w-1.5 bg-[#1e295d] hover:bg-accent cursor-col-resize transition-all h-full self-stretch select-none"
+            className="hidden lg:block w-1 hover:w-1.5 bg-[#1a2440] hover:bg-[#bf4507] cursor-col-resize transition-all h-full self-stretch select-none"
           />
         )}
 
         {/* Center / Right Content Panel */}
-        <main className="flex-1 flex flex-col overflow-hidden bg-slate-50">
+        <main className="flex-1 flex flex-col overflow-hidden bg-[#030712]">
           {/* Mobile Tab Selector */}
-          <div className="flex lg:hidden bg-[#0d1430] border-b border-[#1e295d] text-slate-300 font-mono select-none flex-shrink-0">
+          <div className="flex lg:hidden bg-[#070b18] border-b border-[#1a2440] text-slate-300 font-mono select-none flex-shrink-0">
             <button
               onClick={() => setActiveTab('questions')}
               className={`flex-1 py-3 text-center text-xs font-semibold border-b-2 transition-all ${
-                activeTab === 'questions' ? 'border-accent text-white bg-[#11193a]' : 'border-transparent text-slate-400'
+                activeTab === 'questions' ? 'border-[#bf4507] text-white bg-[#0c1222]' : 'border-transparent text-[#7b8aaa]'
               }`}
             >
               Questions ({exam?.questions.length || 0})
@@ -805,16 +835,16 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
             <button
               onClick={() => setActiveTab('details')}
               className={`flex-1 py-3 text-center text-xs font-semibold border-b-2 transition-all ${
-                activeTab === 'details' ? 'border-accent text-white bg-[#11193a]' : 'border-transparent text-slate-400'
+                activeTab === 'details' ? 'border-[#bf4507] text-white bg-[#0c1222]' : 'border-transparent text-[#7b8aaa]'
               }`}
             >
               Details
             </button>
-            {currentQuestion && currentQuestion.type === 'PROGRAMMING' && (
+            {currentQuestion && currentQuestion?.type === 'PROGRAMMING' && (
               <button
                 onClick={() => setActiveTab('code')}
                 className={`flex-1 py-3 text-center text-xs font-semibold border-b-2 transition-all ${
-                  activeTab === 'code' ? 'border-accent text-white bg-[#11193a]' : 'border-transparent text-slate-400'
+                  activeTab === 'code' ? 'border-[#bf4507] text-white bg-[#0c1222]' : 'border-transparent text-[#7b8aaa]'
                 }`}
               >
                 Code & Run
@@ -827,17 +857,17 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
               
               {/* Split left side: Question description */}
               <div
-                style={{ width: currentQuestion.type === 'PROGRAMMING' && typeof window !== 'undefined' && window.innerWidth >= 1024 ? `${100 - editorWidthPercent}%` : undefined }}
-                className={`w-full p-6 overflow-y-auto border-r border-[#e2e8f0] bg-white flex flex-col justify-between ${
+                style={{ width: currentQuestion?.type === 'PROGRAMMING' && typeof window !== 'undefined' && window.innerWidth >= 1024 ? `${100 - editorWidthPercent}%` : undefined }}
+                className={`w-full p-6 overflow-y-auto border-r border-[#1a2440] bg-[#0c1222] text-[#f0f2f8] flex flex-col justify-between ${
                   activeTab === 'details' ? 'flex flex-1 flex-col' : 'hidden lg:flex lg:flex-col'
                 }`}
               >
                 <div>
-                  <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+                  <div className="flex justify-between items-center border-b border-[#1a2440] pb-3 mb-4">
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setIsQuestionsSidebarOpen(!isQuestionsSidebarOpen)}
-                        className="hidden lg:block text-slate-500 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                        className="hidden lg:block text-[#7b8aaa] hover:text-white p-1.5 rounded-lg hover:bg-[#161e36] transition-colors"
                         title={isQuestionsSidebarOpen ? "Hide Questions List" : "Show Questions List"}
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -848,145 +878,124 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
                           )}
                         </svg>
                       </button>
-                      <h2 className="text-xl font-bold text-[#0a0f24]">
-                        Q{currentQuestionIndex + 1}: {currentQuestion.title}
+                      <h2 className="text-base font-bold text-white">
+                        Question {currentQuestionIndex + 1}: {currentQuestion.title}
                       </h2>
                     </div>
-                    <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-semibold flex-shrink-0">
+                    <span className="text-xs font-mono bg-[#161e36] text-[#bf4507] px-2.5 py-1 rounded-md border border-[#1e295d] font-bold">
                       {currentQuestion.marks} Marks
                     </span>
                   </div>
 
-                  {/* Dynamic Blank / Text Statement */}
+                  {/* Problem statement / blank renderer */}
                   <div className="mb-6">
                     {currentQuestion.type === 'FILL_IN_THE_BLANK' ? (
                       renderBlankStatement(currentQuestion)
                     ) : (
-                      <p className="whitespace-pre-wrap leading-relaxed text-sm text-[#2d3748]">
+                      <p className="whitespace-pre-wrap leading-relaxed text-sm text-[#f0f2f8]">
                         {currentQuestion.problemStatement}
                       </p>
                     )}
                   </div>
 
-                  {/* Extra programming details */}
-                  {currentQuestion.type === 'PROGRAMMING' && (
-                    <div className="space-y-4 text-xs">
-                      {currentQuestion.constraints && (
-                        <div className="bg-slate-50 border border-slate-100 p-3.5 rounded-xl">
-                          <h4 className="font-semibold text-slate-700 mb-1">Constraints</h4>
-                          <pre className="whitespace-pre-wrap font-sans text-slate-600">{currentQuestion.constraints}</pre>
-                        </div>
-                      )}
-                      {currentQuestion.inputFormat && (
-                        <div className="bg-slate-50 border border-slate-100 p-3.5 rounded-xl">
-                          <h4 className="font-semibold text-slate-700 mb-1">Input Format</h4>
-                          <pre className="whitespace-pre-wrap font-sans text-slate-600">{currentQuestion.inputFormat}</pre>
-                        </div>
-                      )}
-                      {currentQuestion.outputFormat && (
-                        <div className="bg-slate-50 border border-slate-100 p-3.5 rounded-xl">
-                          <h4 className="font-semibold text-slate-700 mb-1">Output Format</h4>
-                          <pre className="whitespace-pre-wrap font-sans text-slate-600">{currentQuestion.outputFormat}</pre>
-                        </div>
-                      )}
-                      {currentQuestion.sampleInput && (
-                        <div className="bg-slate-50 border border-slate-100 p-3.5 rounded-xl">
-                          <h4 className="font-semibold text-slate-700 mb-1">Sample Input</h4>
-                          <pre className="font-mono text-slate-600 bg-white p-2 rounded border border-slate-200 mt-1">{currentQuestion.sampleInput}</pre>
-                        </div>
-                      )}
-                      {currentQuestion.sampleOutput && (
-                        <div className="bg-slate-50 border border-slate-100 p-3.5 rounded-xl">
-                          <h4 className="font-semibold text-slate-700 mb-1">Sample Output</h4>
-                          <pre className="font-mono text-slate-600 bg-white p-2 rounded border border-slate-200 mt-1">{currentQuestion.sampleOutput}</pre>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* MCQ Selector list */}
-                  {currentQuestion.type === 'MULTIPLE_CHOICE' && currentQuestion.options && (
-                    <div className="space-y-3 mt-4">
-                      {JSON.parse(currentQuestion.options).map((option: string, idx: number) => {
-                        const isSelected = answers[currentQuestion.id] === option;
+                  {/* MCQ or TRUE_FALSE Options */}
+                  {(currentQuestion.type === 'MULTIPLE_CHOICE' || currentQuestion.type === 'TRUE_FALSE') && (
+                    <div className="space-y-3 mb-6">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-[#bf4507] font-mono">
+                        Select Option:
+                      </p>
+                      {currentQuestion.options?.split('|||').map((option, idx) => {
+                        const trimmedOption = option.trim();
+                        const isSelected = answers[currentQuestion.id] === trimmedOption;
                         return (
-                          <button
+                          <label
                             key={idx}
-                            onClick={() => handleMCQChange(currentQuestion.id, option)}
-                            className={`w-full text-left p-4 rounded-xl border transition-all text-sm flex items-center gap-3 ${
+                            className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
                               isSelected
-                                ? 'bg-accent/10 border-accent text-[#0a0f24] font-semibold shadow-sm'
-                                : 'bg-transparent border-[#e2e8f0] text-slate-700 hover:bg-slate-50'
+                                ? 'bg-[#bf4507]/15 border-[#bf4507] text-white font-semibold ring-1 ring-[#bf4507]/50'
+                                : 'bg-[#070b18] hover:bg-[#161e36] border-[#1a2440] text-[#f0f2f8]'
                             }`}
                           >
-                            <span className={`h-4.5 w-4.5 rounded-full border flex items-center justify-center text-[10px] ${
-                              isSelected ? 'border-accent bg-accent text-white font-bold' : 'border-slate-300'
-                            }`}>
-                              {isSelected && '✓'}
-                            </span>
-                            <span>{option}</span>
-                          </button>
+                            <input
+                              type="radio"
+                              name={`mcq-${currentQuestion.id}`}
+                              value={trimmedOption}
+                              checked={isSelected}
+                              onChange={() => handleMCQChange(currentQuestion.id, trimmedOption)}
+                              className="w-4 h-4 accent-[#bf4507]"
+                            />
+                            <span className="text-sm">{trimmedOption}</span>
+                          </label>
                         );
                       })}
                     </div>
                   )}
 
-                  {/* Short Answer input field */}
+                  {/* SHORT_ANSWER Input */}
                   {currentQuestion.type === 'SHORT_ANSWER' && (
-                    <div className="mt-4">
-                      <label className="block text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2">Your Answer</label>
+                    <div className="mb-6 space-y-2">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-[#bf4507] font-mono">
+                        Your Answer:
+                      </label>
                       <input
                         type="text"
                         value={answers[currentQuestion.id] || ''}
                         onChange={(e) => setAnswers(prev => ({ ...prev, [currentQuestion.id]: e.target.value }))}
-                        placeholder="Type your answer here..."
-                        className="w-full px-4 py-2 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-accent shadow-sm"
+                        placeholder="Type short answer here..."
+                        className="w-full px-4 py-3 bg-[#070b18] border border-[#1a2440] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-[#bf4507] transition-all text-sm"
                       />
                     </div>
                   )}
 
-                  {/* Long Answer textarea */}
+                  {/* LONG_ANSWER Textarea */}
                   {currentQuestion.type === 'LONG_ANSWER' && (
-                    <div className="mt-4">
-                      <label className="block text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2">Write your explanation / essay response</label>
+                    <div className="mb-6 space-y-2">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-[#bf4507] font-mono">
+                        Comprehensive Answer Response:
+                      </label>
                       <textarea
+                        rows={8}
                         value={answers[currentQuestion.id] || ''}
                         onChange={(e) => setAnswers(prev => ({ ...prev, [currentQuestion.id]: e.target.value }))}
-                        placeholder="Write your answer details..."
-                        className="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-accent shadow-sm"
-                        rows={8}
+                        placeholder="Write your explanation or detailed response here..."
+                        className="w-full p-4 bg-[#070b18] border border-[#1a2440] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-[#bf4507] transition-all text-sm leading-relaxed"
                       />
                     </div>
                   )}
                 </div>
 
-                {/* Non-programming answer submit actions */}
-                {currentQuestion.type !== 'PROGRAMMING' && (
-                  <div className="pt-4 border-t border-slate-100 flex justify-end mt-6 text-xs text-slate-400 font-mono">
-                    {submissionStatuses[currentQuestion.id] === 'SAVING' ? 'Saving changes...' : 'Response auto-saved'}
-                  </div>
-                )}
-              </div>
+                {/* Footer question navigator buttons */}
+                <div className="flex justify-between items-center pt-4 border-t border-[#1a2440] mt-6">
+                  <button
+                    disabled={currentQuestionIndex === 0}
+                    onClick={() => setCurrentQuestionIndex(prev => prev - 1)}
+                    className="bg-[#070b18] hover:bg-[#161e36] text-[#7b8aaa] hover:text-white border border-[#1a2440] disabled:opacity-40 disabled:hover:bg-[#070b18] disabled:hover:text-[#7b8aaa] px-4 py-2 rounded-xl text-xs font-semibold transition-all"
+                  >
+                    ← Previous
+                  </button>
 
-              {currentQuestion.type === 'PROGRAMMING' && (
-                <div
-                  onMouseDown={startResizeEditor}
-                  className="hidden lg:block w-1 hover:w-1.5 bg-[#1e295d] hover:bg-accent cursor-col-resize transition-all h-full self-stretch select-none"
-                />
-              )}
+                  <button
+                    disabled={!exam || currentQuestionIndex === exam.questions.length - 1}
+                    onClick={() => setCurrentQuestionIndex(prev => prev + 1)}
+                    className="bg-[#bf4507] hover:bg-[#c24709] text-white disabled:opacity-40 px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-md"
+                  >
+                    Next Question →
+                  </button>
+                </div>
+              </div>
 
               {/* Split right side: Monaco editor / run terminal (Only for PROGRAMMING) */}
               <div
-                style={{ width: currentQuestion.type === 'PROGRAMMING' && typeof window !== 'undefined' && window.innerWidth >= 1024 ? `${editorWidthPercent}%` : undefined }}
+                style={{ width: currentQuestion?.type === 'PROGRAMMING' && typeof window !== 'undefined' && window.innerWidth >= 1024 ? `${editorWidthPercent}%` : undefined }}
                 className={`w-full flex flex-col overflow-hidden bg-slate-900 ${
                   activeTab === 'code' ? 'flex flex-1 flex-col' : 'hidden lg:flex lg:flex-col'
                 }`}
               >
-                {currentQuestion.type === 'PROGRAMMING' ? (
+                {currentQuestion?.type === 'PROGRAMMING' ? (
                   <div className="flex-1 flex flex-col overflow-hidden">
                     {/* Editor header options */}
-                    <div className="bg-slate-950 px-4 py-2 text-xs font-semibold text-slate-400 border-b border-slate-800 flex justify-between items-center">
-                      <span>Monaco Code Workspace ({currentQuestion.language})</span>
+                    <div className="bg-[#070b18] px-4 py-2 text-xs font-semibold text-slate-400 border-b border-[#1a2440] flex justify-between items-center">
+                      <span>Monaco Code Workspace ({currentQuestion?.language || 'javascript'})</span>
                       <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-mono">VS-Dark</span>
                     </div>
                     
@@ -994,15 +1003,15 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
                     <div className="flex-1 min-h-[300px]">
                       <Editor
                         height="100%"
-                        language={currentQuestion.language || 'javascript'}
+                        language={currentQuestion?.language || 'javascript'}
                         theme="vs-dark"
-                        value={answers[currentQuestion.id]?.code || ''}
+                        value={answers[currentQuestion?.id]?.code || ''}
                         onChange={(val) => {
                           setAnswers(prev => ({
                             ...prev,
-                            [currentQuestion.id]: {
+                            [currentQuestion?.id]: {
                               code: val || '',
-                              language: currentQuestion.language || 'javascript'
+                              language: currentQuestion?.language || 'javascript'
                             }
                           }));
                         }}
@@ -1019,30 +1028,31 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
                       />
                     </div>
 
-                    {/* Console / Submission Controls */}
-                    <div className="h-64 border-t border-slate-800 bg-[#060814] flex flex-col">
-                      <div className="bg-[#0b0f24] border-b border-slate-800 px-4 py-2 flex justify-between items-center">
-                        <span className="text-xs font-semibold text-slate-400 font-mono">Terminal Console</span>
-                        <div className="flex gap-2">
+                    {/* Interactive Execution Console panel */}
+                    <div className="h-64 border-t border-[#1a2440] flex flex-col bg-[#070b18]">
+                      {/* Terminal Header */}
+                      <div className="bg-[#070b18] border-b border-[#1a2440] px-4 py-2 flex justify-between items-center">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-300 font-mono flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                          Output & Test Runner Console
+                        </span>
+                        
+                        <div className="flex items-center gap-2">
                           <button
                             onClick={() => {
-                              if (terminalRunning) {
-                                  setTerminalRunning(false);
-                                } else {
-                                  setTerminalRunId(prev => prev + 1);
-                                  setTerminalRunning(true);
-                                }
+                              setTerminalRunning(prev => !prev);
+                              setTerminalRunId(Date.now());
                             }}
-                            className={`text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
-                              terminalRunning
-                                ? 'bg-red-950 border-red-800 hover:bg-red-900'
-                                : 'bg-[#1b2554] border-[#2b3a7a] hover:bg-[#2c3d82]'
+                            className={`px-4 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all ${
+                              terminalRunning 
+                                ? 'bg-red-600 hover:bg-red-700 text-white' 
+                                : 'bg-emerald-600 hover:bg-emerald-500 text-white'
                             }`}
                           >
                             {terminalRunning ? 'Stop Code' : 'Run Code'}
                           </button>
-                          <span className="text-xs text-slate-400 font-mono self-center">
-                            {submissionStatuses[currentQuestion.id] === 'SAVING' ? 'Saving...' : 'Auto-saved'}
+                          <span className="text-xs text-[#7b8aaa] font-mono self-center">
+                            {submissionStatuses[currentQuestion?.id] === 'SAVING' ? 'Saving...' : 'Auto-saved'}
                           </span>
                         </div>
                       </div>
@@ -1051,8 +1061,8 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
                       <div className="flex-1 min-h-0 relative bg-[#060814]">
                         {terminalRunId > 0 ? (
                           <RunTerminal
-                            code={answers[currentQuestion.id]?.code || ''}
-                            language={currentQuestion.language || 'javascript'}
+                            code={answers[currentQuestion?.id]?.code || ''}
+                            language={currentQuestion?.language || 'javascript'}
                             runId={terminalRunId}
                             timeLimitSec={300}
                             isRunning={terminalRunning}
@@ -1068,10 +1078,10 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
                   </div>
                 ) : (
                   /* Non programming instruction message */
-                  <div className="flex-1 flex items-center justify-center text-slate-500 text-sm p-8 text-center bg-slate-900">
+                  <div className="flex-1 flex items-center justify-center text-slate-500 text-sm p-8 text-center bg-[#070b18]">
                     <div>
                       <div className="text-4xl mb-2 flex justify-center">
-                        <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg className="w-12 h-12 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </div>
@@ -1143,6 +1153,59 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
                 className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-xl transition-all shadow-md"
               >
                 Okay
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Theme Settings Modal */}
+      {showThemeModal && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-950 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden text-white">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-[#bf4507]/15 flex items-center justify-center text-[#bf4507]">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Appearance &amp; Tint</h3>
+                  <p className="text-xs text-[#7b8aaa]">Choose workspace mode and tint color</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowThemeModal(false)}
+                className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all"
+                aria-label="Close"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-5 space-y-5">
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-2">Workspace Theme</label>
+                <div className="p-4 rounded-xl border border-[#bf4507]/40 bg-[#bf4507]/10 text-white flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#bf4507] animate-pulse" />
+                    <span className="text-xs font-bold">Dark Mode (Enforced)</span>
+                  </div>
+                  <span className="text-[10px] uppercase font-mono font-bold bg-[#bf4507]/20 text-[#bf4507] px-2 py-0.5 rounded">Active</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-5 pb-5">
+              <button
+                onClick={() => setShowThemeModal(false)}
+                className="w-full py-2.5 bg-[#bf4507] hover:bg-[#c24709] text-white text-sm font-semibold rounded-xl transition-all shadow-md"
+              >
+                Apply &amp; Close
               </button>
             </div>
           </div>
