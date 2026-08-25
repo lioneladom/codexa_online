@@ -32,6 +32,23 @@ interface QuestionBankItem {
   testCases?: TestCase[];
 }
 
+const parseOptions = (raw?: string | null): string[] => {
+  if (!raw) return [];
+  const trimmed = raw.trim();
+  if (!trimmed) return [];
+  if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) return parsed.map(String).map(s => s.trim()).filter(Boolean);
+    } catch (e) {}
+  }
+  if (trimmed.includes('|||')) return trimmed.split('|||').map(s => s.trim()).filter(Boolean);
+  if (trimmed.includes('\n')) return trimmed.split('\n').map(s => s.trim()).filter(Boolean);
+  if (trimmed.includes(';')) return trimmed.split(';').map(s => s.trim()).filter(Boolean);
+  if (trimmed.includes(',')) return trimmed.split(',').map(s => s.trim()).filter(Boolean);
+  return [trimmed];
+};
+
 export default function QuestionBankPage() {
   const [questions, setQuestions] = useState<QuestionBankItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -452,7 +469,7 @@ export default function QuestionBankPage() {
                 <div>
                   <span className="text-[10px] text-accent font-extrabold uppercase tracking-wider block mb-2">Options</span>
                   <div className="space-y-1.5">
-                    {JSON.parse(selectedQuestion.options).map((opt: string, idx: number) => (
+                    {parseOptions(selectedQuestion.options).map((opt: string, idx: number) => (
                       <div
                         key={idx}
                         className={`p-2.5 border rounded-xl flex items-center gap-2 font-medium ${

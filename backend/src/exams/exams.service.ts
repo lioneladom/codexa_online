@@ -562,9 +562,13 @@ export class ExamsService {
         testCases: testCaseResults,
       };
 
-    } else if (question.type === 'MULTIPLE_CHOICE') {
-      const selectedOption = answerData.selectedOption || '';
-      const correct = selectedOption === question.correctOption;
+    } else if (question.type === 'MULTIPLE_CHOICE' || (question.type as string) === 'TRUE_FALSE') {
+      const selectedOption = (
+        typeof answerData === 'string'
+          ? answerData
+          : (answerData?.selectedOption || answerData?.answer || answerData?.code || '')
+      ).trim();
+      const correct = selectedOption.toLowerCase() === (question.correctOption || '').trim().toLowerCase();
       score = correct ? question.marks : 0;
 
       const existingSubmission = await this.prisma.submission.findFirst({
@@ -578,6 +582,7 @@ export class ExamsService {
           data: {
             code: selectedOption,
             score,
+            status: 'GRADED',
           }
         });
       } else {
@@ -607,7 +612,11 @@ export class ExamsService {
       return { submission };
 
     } else if (question.type === 'FILL_IN_THE_BLANK') {
-      const textAnswer = (answerData.answer || '').trim();
+      const textAnswer = (
+        typeof answerData === 'string'
+          ? answerData
+          : (answerData?.answer || answerData?.code || answerData?.selectedOption || '')
+      ).trim();
       const correctAnswers = (question.correctOption || '').split(',').map(a => a.trim().toLowerCase());
       const correct = correctAnswers.includes(textAnswer.toLowerCase());
       score = correct ? question.marks : 0;
@@ -623,6 +632,7 @@ export class ExamsService {
           data: {
             code: textAnswer,
             score,
+            status: 'GRADED',
           }
         });
       } else {
@@ -652,7 +662,11 @@ export class ExamsService {
       return { submission };
 
     } else {
-      const textAnswer = answerData.answer || '';
+      const textAnswer = (
+        typeof answerData === 'string'
+          ? answerData
+          : (answerData?.answer || answerData?.code || '')
+      ).trim();
       const existingSubmission = await this.prisma.submission.findFirst({
         where: { sessionId, questionId },
       });

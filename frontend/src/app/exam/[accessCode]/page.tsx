@@ -42,6 +42,63 @@ interface Exam {
   studentPassword?: string;
 }
 
+// Helper to safely parse question options from JSON array strings, pipe delimiters, newlines, etc.
+const parseQuestionOptions = (optionsRaw?: string | string[] | null, questionType?: string): string[] => {
+  if (questionType === 'TRUE_FALSE') {
+    if (!optionsRaw) return ['True', 'False'];
+  }
+  if (!optionsRaw) return [];
+  if (Array.isArray(optionsRaw)) {
+    return optionsRaw.map(opt => typeof opt === 'string' ? opt.trim() : String(opt)).filter(Boolean);
+  }
+  if (typeof optionsRaw !== 'string') return [];
+
+  const raw = optionsRaw.trim();
+  if (!raw) return questionType === 'TRUE_FALSE' ? ['True', 'False'] : [];
+
+  // 1. If it's a JSON array string: '["Option A", "Option B"]'
+  if (raw.startsWith('[') && raw.endsWith(']')) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.map(opt => typeof opt === 'string' ? opt.trim() : String(opt)).filter(Boolean);
+      }
+    } catch (e) {
+      // Fall through to other delimiters
+    }
+  }
+
+  // 2. If it contains the triple-pipe delimiter '|||'
+  if (raw.includes('|||')) {
+    return raw.split('|||').map(opt => opt.trim()).filter(Boolean);
+  }
+
+  // 3. If it contains double-pipe or spaced pipe
+  if (raw.includes(' || ')) {
+    return raw.split(' || ').map(opt => opt.trim()).filter(Boolean);
+  }
+
+  // 4. If it contains newline separation '\n'
+  if (raw.includes('\n')) {
+    return raw.split('\n').map(opt => opt.trim()).filter(Boolean);
+  }
+
+  // 5. If it contains semicolon separation ';'
+  if (raw.includes(';')) {
+    return raw.split(';').map(opt => opt.trim()).filter(Boolean);
+  }
+
+  // 6. If it contains comma separation
+  if (raw.includes(',')) {
+    const parts = raw.split(',').map(opt => opt.trim()).filter(Boolean);
+    if (parts.length > 1) {
+      return parts;
+    }
+  }
+
+  return [raw];
+};
+
 export default function StudentExamPage({ params }: { params: { accessCode: string } }) {
   const [step, setStep] = useState<'entry' | 'exam' | 'completed'>('entry');
   const [activeTab, setActiveTab] = useState<'questions' | 'details' | 'code'>('questions');
@@ -169,6 +226,9 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
               sessionId,
               questionId: qId,
               answer: answerVal,
+              selectedOption: typeof answerVal === 'string' ? answerVal : (answerVal?.selectedOption || answerVal?.code || ''),
+              code: typeof answerVal === 'object' ? answerVal?.code : answerVal,
+              language: typeof answerVal === 'object' ? answerVal?.language : undefined,
             }),
           });
           if (res.ok) {
@@ -465,6 +525,9 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
           sessionId,
           questionId: question.id,
           answer: answerVal,
+          selectedOption: typeof answerVal === 'string' ? answerVal : (answerVal?.selectedOption || answerVal?.code || ''),
+          code: typeof answerVal === 'object' ? answerVal?.code : answerVal,
+          language: typeof answerVal === 'object' ? answerVal?.language : undefined,
         }),
       });
 
@@ -899,37 +962,87 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
                   </div>
 
                   {/* MCQ or TRUE_FALSE Options */}
-                  {(currentQuestion.type === 'MULTIPLE_CHOICE' || currentQuestion.type === 'TRUE_FALSE') && (
-                    <div className="space-y-3 mb-6">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-[#bf4507] font-mono">
-                        Select Option:
-                      </p>
-                      {currentQuestion.options?.split('|||').map((option, idx) => {
-                        const trimmedOption = option.trim();
-                        const isSelected = answers[currentQuestion.id] === trimmedOption;
-                        return (
-                          <label
-                            key={idx}
-                            className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
-                              isSelected
-                                ? 'bg-[#bf4507]/15 border-[#bf4507] text-white font-semibold ring-1 ring-[#bf4507]/50'
-                                : 'bg-[#070b18] hover:bg-[#161e36] border-[#1a2440] text-[#f0f2f8]'
-                            }`}
-                          >
-                            <input
-                              type="radio"
-                              name={`mcq-${currentQuestion.id}`}
-                              value={trimmedOption}
-                              checked={isSelected}
-                              onChange={() => handleMCQChange(currentQuestion.id, trimmedOption)}
-                              className="w-4 h-4 accent-[#bf4507]"
-                            />
-                            <span className="text-sm">{trimmedOption}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  )}
+                  {(currentQuestion.type === 'MULTIPLE_CHOICE' || currentQuestion.type === 'TRUE_FALSE') && (() => {
+                    const optionsList = parseQuestionOptions(currentQuestion.options, currentQuestion.type);
+                    const currentSelectedAnswer = typeof answers[currentQuestion.id] === 'string' 
+                      ? answers[currentQuestion.id] 
+                      : (answers[currentQuestion.id]?.selectedOption || answers[currentQuestion.id]?.code || '');
+
+                    return (
+                      <div className="space-y-3 mb-6">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-bold uppercase tracking-wider text-[#bf4507] font-mono flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-[#bf4507]"></span>
+                            Select an Option ({optionsList.length} Choice{optionsList.length === 1 ? '' : 's'}):
+                          </p>
+                          {currentSelectedAnswer && (
+                            <span className="text-[11px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-2 py-0.5 rounded-md">
+                              Option Selected
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-2.5">
+                          {optionsList.map((option, idx) => {
+                            const trimmedOption = option.trim();
+                            const isSelected = currentSelectedAnswer.trim().toLowerCase() === trimmedOption.toLowerCase();
+                            const optionLetter = String.fromCharCode(65 + idx);
+
+                            return (
+                              <label
+                                key={idx}
+                                onClick={() => handleMCQChange(currentQuestion.id, trimmedOption)}
+                                className={`flex items-center gap-3.5 p-4 rounded-2xl border cursor-pointer transition-all select-none group relative overflow-hidden ${
+                                  isSelected
+                                    ? 'bg-[#bf4507]/15 border-[#bf4507] text-white font-semibold ring-2 ring-[#bf4507]/40 shadow-[0_4px_20px_rgba(191,69,7,0.15)]'
+                                    : 'bg-[#070b18] hover:bg-[#11182c] border-[#1a2440] hover:border-[#2a3a60] text-[#f0f2f8]'
+                                }`}
+                              >
+                                {/* Option Letter Indicator */}
+                                <span
+                                  className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-mono font-black shrink-0 transition-all ${
+                                    isSelected
+                                      ? 'bg-[#bf4507] text-white shadow-md'
+                                      : 'bg-[#0c1222] border border-[#1a2440] text-[#7b8aaa] group-hover:text-white group-hover:border-[#bf4507]/50'
+                                  }`}
+                                >
+                                  {optionLetter}
+                                </span>
+
+                                {/* Radio Indicator */}
+                                <input
+                                  type="radio"
+                                  name={`mcq-${currentQuestion.id}`}
+                                  value={trimmedOption}
+                                  checked={isSelected}
+                                  onChange={() => handleMCQChange(currentQuestion.id, trimmedOption)}
+                                  className="sr-only"
+                                />
+
+                                {/* Option Text */}
+                                <span className="text-sm flex-1 leading-relaxed">{trimmedOption}</span>
+
+                                {/* Selected Check Indicator */}
+                                <div
+                                  className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                                    isSelected
+                                      ? 'bg-[#bf4507] text-white shadow-sm'
+                                      : 'border-2 border-[#1a2440] group-hover:border-[#7b8aaa]'
+                                  }`}
+                                >
+                                  {isSelected && (
+                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* SHORT_ANSWER Input */}
                   {currentQuestion.type === 'SHORT_ANSWER' && (
