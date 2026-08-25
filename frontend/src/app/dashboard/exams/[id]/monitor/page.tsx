@@ -218,24 +218,78 @@ export default function ExamMonitorPage() {
     };
   }, [examInfo]);
 
+  const [showStopModal, setShowStopModal] = useState(false);
+  const [stoppingExam, setStoppingExam] = useState(false);
+
+  const handleStopExam = async () => {
+    const token = localStorage.getItem('codexa_token');
+    if (!token || !examInfo) return;
+    setStoppingExam(true);
+    try {
+      const res = await fetch(`${getApiUrl()}/exams/${examInfo.id}/archive`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (res.ok) {
+        setExamInfo((prev: any) => prev ? { ...prev, status: 'ARCHIVED' } : prev);
+        setShowStopModal(false);
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        alert(errorData.message || 'Failed to stop exam.');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Network error while stopping exam.');
+    } finally {
+      setStoppingExam(false);
+    }
+  };
+
   return (
     <div className="p-8 bg-[#030712] min-h-screen text-[#f0f2f8]">
       {/* Header bar */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-wide">Live Exam Monitor</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-white tracking-wide">Live Operations Center</h1>
+            {examInfo?.status === 'ARCHIVED' && (
+              <span className="px-2.5 py-0.5 rounded-full bg-rose-950/60 border border-rose-500/40 text-rose-400 text-[10px] font-bold uppercase tracking-wider">
+                Exam Stopped
+              </span>
+            )}
+            {examInfo?.status === 'PUBLISHED' && (
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 text-[10px] font-bold uppercase tracking-wider animate-pulse">
+                Live & Active
+              </span>
+            )}
+          </div>
           {examInfo && (
             <p className="text-[#7b8aaa] text-sm mt-1">
-              Currently monitoring: <span className="font-semibold text-white">{examInfo.title}</span> ({examInfo.courseCode})
+              Currently monitoring: <span className="font-semibold text-white">{examInfo.title}</span> ({examInfo.courseCode}) · Access Code: <span className="font-mono text-[#bf4507] font-bold">{examInfo.accessCode}</span>
             </p>
           )}
         </div>
-        <button
-          onClick={() => router.back()}
-          className="bg-[#0c1222] border border-[#1a2440] text-[#f0f2f8] font-semibold px-4 py-2 rounded-xl text-xs hover:bg-[#161e36] transition-all shadow-sm"
-        >
-          ← Back to Exams
-        </button>
+        <div className="flex items-center gap-3">
+          {examInfo?.status === 'PUBLISHED' && (
+            <button
+              onClick={() => setShowStopModal(true)}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-md flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Stop Ongoing Exam</span>
+            </button>
+          )}
+          <button
+            onClick={() => router.back()}
+            className="bg-[#0c1222] border border-[#1a2440] text-[#f0f2f8] font-semibold px-4 py-2 rounded-xl text-xs hover:bg-[#161e36] transition-all shadow-sm"
+          >
+            ← Back to Exams
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -323,6 +377,38 @@ export default function ExamMonitorPage() {
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stop Exam Modal */}
+      {showStopModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0c1222] border border-[#1a2440] rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center relative overflow-hidden">
+            <div className="w-12 h-12 bg-rose-500/10 text-rose-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-rose-500/20">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+            </div>
+            <h3 className="text-base font-bold text-white">Stop Ongoing Examination</h3>
+            <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+              Are you sure you want to stop <strong className="text-white">{examInfo?.title}</strong>? Active student workspaces will be immediately locked and their final answers submitted.
+            </p>
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => setShowStopModal(false)}
+                className="flex-1 px-4 py-2.5 border border-[#1a2440] text-slate-300 text-xs font-bold rounded-xl hover:bg-[#161e36] transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleStopExam}
+                disabled={stoppingExam}
+                className="flex-1 px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
+              >
+                {stoppingExam ? 'Stopping...' : 'Stop Exam'}
+              </button>
             </div>
           </div>
         </div>

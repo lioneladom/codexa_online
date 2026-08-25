@@ -85,7 +85,15 @@ export class ExamsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('LECTURER', 'ADMIN')
   archive(@Param('id') id: string, @Request() req: any) {
-    return this.examsService.archive(id, req.user.sub);
+    return this.examsService.archive(id, req.user.sub, req.user.role);
+  }
+
+  @Post('access/:accessCode/archive')
+  archiveByAccessCode(
+    @Param('accessCode') accessCode: string,
+    @Body() body: { invigilatorPassword?: string },
+  ) {
+    return this.examsService.archiveByAccessCode(accessCode, body.invigilatorPassword);
   }
 
   @Delete(':id')

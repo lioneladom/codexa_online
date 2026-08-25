@@ -137,13 +137,17 @@ export default function ExamsPage() {
 
   const handleStopExam = async (examId: string) => {
     const token = localStorage.getItem('codexa_token');
-    if (!token) return;
+    if (!token) {
+      alert('You must be signed in to perform this action.');
+      return;
+    }
     setStopLoading(examId);
     try {
       const res = await fetch(`${getApiUrl()}/exams/${examId}/archive`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
       if (res.ok) {
@@ -153,9 +157,13 @@ export default function ExamsPage() {
           )
         );
         setShowStopConfirm(null);
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        alert(errorData.message || 'Failed to stop exam. Please verify your permissions.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert(err.message || 'Network error while stopping exam.');
     } finally {
       setStopLoading(null);
     }

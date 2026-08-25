@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Editor from '@monaco-editor/react';
+import { io } from 'socket.io-client';
 import RunTerminal from '@/components/RunTerminal';
-import { getApiUrl } from '@/config/api';
+import { getApiUrl, getSocketUrl } from '@/config/api';
 import CodexaLogo from '@/components/CodexaLogo';
 import { TINT_PRESETS, getActiveMode, getActiveTint, applyThemeMode, getActiveTheme } from '@/config/themes';
 
@@ -286,6 +287,32 @@ export default function StudentExamPage({ params }: { params: { accessCode: stri
     }
     fetchExam();
   }, [params.accessCode]);
+
+  // Connect to live WebSocket room to receive real-time invigilator actions (e.g. EXAM_STOPPED)
+  useEffect(() => {
+    if (step !== 'exam' || !exam) return;
+
+    const socket = io(getSocketUrl());
+    socket.on('connect', () => {
+      socket.emit('joinExam', {
+        examId: exam.id,
+        userType: 'STUDENT',
+        name,
+        studentNumber,
+        sessionId,
+      });
+    });
+
+    socket.on('activity', (event: { activity: string; data: any }) => {
+      if (event.activity === 'EXAM_STOPPED') {
+        setShowExamStoppedModal(true);
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [step, exam, sessionId, name, studentNumber]);
 
   // Load candidate details from sessionStorage if entering from the main gateway selection screen
   useEffect(() => {

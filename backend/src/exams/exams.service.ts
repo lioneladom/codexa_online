@@ -215,7 +215,7 @@ export class ExamsService {
     }));
   }
 
-  async findOne(id: string, lecturerId: string, institutionId?: string) {
+  async findOne(id: string, lecturerId?: string, institutionId?: string, role?: string) {
     const exam = await this.prisma.exam.findUnique({
       where: { id },
       include: {
@@ -231,15 +231,15 @@ export class ExamsService {
       throw new NotFoundException('Exam not found');
     }
 
-    if (exam.lecturerId !== lecturerId) {
+    if (role !== 'ADMIN' && lecturerId && exam.lecturerId && exam.lecturerId !== lecturerId) {
       throw new ForbiddenException('You do not have access to this exam');
     }
 
     return exam;
   }
 
-  async publish(id: string, lecturerId: string) {
-    const exam = await this.findOne(id, lecturerId);
+  async publish(id: string, lecturerId?: string, role?: string) {
+    const exam = await this.findOne(id, lecturerId, undefined, role);
     
     const studentPassword = exam.studentPassword || this.generatePassword();
     const invigilatorPassword = exam.invigilatorPassword || this.generatePassword();
@@ -264,8 +264,8 @@ export class ExamsService {
     };
   }
 
-  async archive(id: string, lecturerId: string) {
-    const exam = await this.findOne(id, lecturerId);
+  async archive(id: string, lecturerId?: string, role?: string) {
+    const exam = await this.findOne(id, lecturerId, undefined, role);
     
     // Update all active exam sessions to COMPLETED when the exam is stopped by the lecturer
     await this.prisma.examSession.updateMany({
@@ -290,6 +290,46 @@ export class ExamsService {
 
     return this.prisma.exam.update({
       where: { id },
+      data: { status: 'ARCHIVED' },
+    });
+  }
+
+  async archiveByAccessCode(accessCode: string, invigilatorPassword?: string) {
+    const exam = await this.prisma.exam.findUnique({
+      where: { accessCode: accessCode.toUpperCase() },
+    });
+
+    if (!exam) {
+      throw new NotFoundException('Exam not found');
+    }
+
+    if (exam.invigilatorPassword && exam.invigilatorPassword !== invigilatorPassword) {
+      throw new ForbiddenException('Invalid invigilator password');
+    }
+
+    // Update all active exam sessions to COMPLETED
+    await this.prisma.examSession.updateMany({
+      where: {
+        examId: exam.id,
+        status: 'ACTIVE',
+      },
+      data: {
+        status: 'COMPLETED',
+        completedAt: new Date(),
+      },
+    });
+
+    // Notify monitoring gateway that the exam has been stopped
+    try {
+      this.monitoringGateway.sendActivityToExam(exam.id, 'EXAM_STOPPED', {
+        examId: exam.id,
+      });
+    } catch (err) {
+      console.error('Failed to notify exam stopped:', err);
+    }
+
+    return this.prisma.exam.update({
+      where: { id: exam.id },
       data: { status: 'ARCHIVED' },
     });
   }
