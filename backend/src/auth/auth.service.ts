@@ -17,13 +17,8 @@ export class AuthService {
     const { username, password, name, institutionId } = registerDto;
     const cleanUsername = username ? username.trim() : '';
 
-    const existingUser = await this.prisma.user.findFirst({
-      where: {
-        OR: [
-          { username: cleanUsername },
-          { username: { equals: cleanUsername, mode: 'insensitive' } },
-        ],
-      },
+    const existingUser = await this.prisma.user.findUnique({
+      where: { username: cleanUsername },
     });
 
     if (existingUser) {
@@ -54,17 +49,17 @@ export class AuthService {
     const { username, password } = loginDto;
     const cleanUsername = username ? username.trim() : '';
 
-    // First try exact match, then try case-insensitive match for existing users
     let user = await this.prisma.user.findUnique({
       where: { username: cleanUsername },
     });
 
     if (!user) {
-      user = await this.prisma.user.findFirst({
-        where: {
-          username: { equals: cleanUsername, mode: 'insensitive' },
-        },
+      const allUsers = await this.prisma.user.findMany({
+        select: { id: true, username: true, password: true, name: true, role: true },
       });
+      user = (allUsers.find(
+        (u) => u.username.trim().toLowerCase() === cleanUsername.toLowerCase(),
+      ) as any) || null;
     }
 
     if (!user) {
