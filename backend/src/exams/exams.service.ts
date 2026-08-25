@@ -97,11 +97,14 @@ export class ExamsService {
     });
   }
 
-  async update(id: string, updateExamDto: CreateExamDto, lecturerId: string, institutionId?: string) {
-    const exam = await this.findOne(id, lecturerId);
+  async update(id: string, updateExamDto: CreateExamDto, lecturerId?: string, institutionId?: string, role?: string) {
+    const exam = await this.findOne(id, lecturerId, institutionId, role);
 
     return this.prisma.$transaction(async (prisma) => {
-      // Update the exam itself
+      // 1. Update the exam metadata
+      const startDateTime = updateExamDto.startDateTime ? new Date(updateExamDto.startDateTime) : null;
+      const endDateTime = updateExamDto.endDateTime ? new Date(updateExamDto.endDateTime) : null;
+
       const updatedExam = await prisma.exam.update({
         where: { id },
         data: {
@@ -109,8 +112,8 @@ export class ExamsService {
           courseCode: updateExamDto.courseCode,
           description: updateExamDto.description,
           duration: updateExamDto.duration,
-          startDateTime: new Date(updateExamDto.startDateTime),
-          endDateTime: new Date(updateExamDto.endDateTime),
+          startDateTime,
+          endDateTime,
           studentPassword: updateExamDto.studentPassword,
           invigilatorPassword: updateExamDto.invigilatorPassword,
           enableMonitoring: updateExamDto.enableMonitoring,
@@ -121,17 +124,49 @@ export class ExamsService {
         },
       });
 
-      // Delete all existing questions and their test cases
-      await prisma.testCase.deleteMany({
-        where: { question: { examId: id } },
-      });
-      await prisma.question.deleteMany({
+      // 2. Find existing questions for this exam
+      const existingQuestions = await prisma.question.findMany({
         where: { examId: id },
+        select: { id: true },
       });
+      const qIds = existingQuestions.map((q) => q.id);
 
-      // Create new questions
+      // 3. Delete existing child submissions and results to prevent foreign key errors
+      if (qIds.length > 0) {
+        const submissions = await prisma.submission.findMany({
+          where: {
+            OR: [
+              { examId: id },
+              { questionId: { in: qIds } },
+            ],
+          },
+          select: { id: true },
+        });
+        const subIds = submissions.map((s) => s.id);
+
+        if (subIds.length > 0) {
+          await prisma.result.deleteMany({
+            where: { submissionId: { in: subIds } },
+          });
+          await prisma.submission.deleteMany({
+            where: { id: { in: subIds } },
+          });
+        }
+
+        // Delete test cases
+        await prisma.testCase.deleteMany({
+          where: { questionId: { in: qIds } },
+        });
+
+        // Delete old questions
+        await prisma.question.deleteMany({
+          where: { examId: id },
+        });
+      }
+
+      // 4. Create new questions
       const questions = await Promise.all(
-        updateExamDto.questions.map(async (question) => {
+        (updateExamDto.questions || []).map(async (question, idx) => {
           const savedQuestion = await prisma.question.create({
             data: {
               examId: id,
@@ -148,20 +183,20 @@ export class ExamsService {
               correctOption: question.correctOption,
               language: question.language,
               marks: question.marks,
-              order: question.order,
+              order: question.order !== undefined ? question.order : idx,
             },
           });
 
           if (question.testCases && question.testCases.length > 0) {
             await Promise.all(
-              question.testCases.map((tc, idx) =>
+              question.testCases.map((tc, tcIdx) =>
                 prisma.testCase.create({
                   data: {
                     questionId: savedQuestion.id,
                     input: tc.input,
                     expectedOutput: tc.expectedOutput,
                     isHidden: tc.isHidden || false,
-                    order: idx,
+                    order: tcIdx,
                   },
                 }),
               ),
@@ -951,65 +986,86 @@ export class ExamsService {
     });
   }
 
-  async remove(id: string, lecturerId: string) {
-    const exam = await this.findOne(id, lecturerId);
+  async remove(id: string, lecturerId?: string, role?: string) {
+    const exam = await this.findOne(id, lecturerId, undefined, role);
     if (!exam) {
       throw new NotFoundException('Exam not found');
     }
 
     return this.prisma.$transaction(async (prisma) => {
-      // Find all questions associated with this exam
+      // 1. Find all questions associated with this exam
       const questions = await prisma.question.findMany({
         where: { examId: id },
         select: { id: true },
       });
       const questionIds = questions.map((q) => q.id);
 
-      // Delete test cases
-      await prisma.testCase.deleteMany({
-        where: { questionId: { in: questionIds } },
-      });
-
-      // Delete questions
-      await prisma.question.deleteMany({
-        where: { examId: id },
-      });
-
-      // Find sessions
+      // 2. Find sessions
       const sessions = await prisma.examSession.findMany({
         where: { examId: id },
         select: { id: true },
       });
       const sessionIds = sessions.map((s) => s.id);
 
-      // Find submissions
+      // 3. Find submissions
       const submissions = await prisma.submission.findMany({
-        where: { sessionId: { in: sessionIds } },
+        where: {
+          OR: [
+            { examId: id },
+            { sessionId: { in: sessionIds } },
+            { questionId: { in: questionIds } },
+          ],
+        },
         select: { id: true },
       });
       const submissionIds = submissions.map((sub) => sub.id);
 
-      // Delete results
-      await prisma.result.deleteMany({
-        where: { submissionId: { in: submissionIds } },
-      });
+      // 4. Delete results FIRST (references submission and testCase)
+      if (submissionIds.length > 0) {
+        await prisma.result.deleteMany({
+          where: { submissionId: { in: submissionIds } },
+        });
+      }
 
-      // Delete submissions
+      // 5. Delete submissions (references question, session, exam)
       await prisma.submission.deleteMany({
-        where: { sessionId: { in: sessionIds } },
+        where: {
+          OR: [
+            { examId: id },
+            { sessionId: { in: sessionIds } },
+            { questionId: { in: questionIds } },
+          ],
+        },
       });
 
-      // Delete sessions
+      // 6. Delete test cases (references question)
+      if (questionIds.length > 0) {
+        await prisma.testCase.deleteMany({
+          where: { questionId: { in: questionIds } },
+        });
+      }
+
+      // 7. Delete questions (references exam)
+      await prisma.question.deleteMany({
+        where: { examId: id },
+      });
+
+      // 8. Delete activity logs
+      await prisma.activityLog.deleteMany({
+        where: {
+          OR: [
+            { examId: id },
+            { sessionId: { in: sessionIds } },
+          ],
+        },
+      });
+
+      // 9. Delete sessions
       await prisma.examSession.deleteMany({
         where: { examId: id },
       });
 
-      // Delete activity logs
-      await prisma.activityLog.deleteMany({
-        where: { examId: id },
-      });
-
-      // Delete exam
+      // 10. Delete the exam itself
       return prisma.exam.delete({
         where: { id },
       });

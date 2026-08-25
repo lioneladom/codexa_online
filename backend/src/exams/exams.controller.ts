@@ -42,7 +42,7 @@ export class ExamsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('LECTURER', 'ADMIN')
   update(@Param('id') id: string, @Body() updateExamDto: CreateExamDto, @Request() req: any) {
-    return this.examsService.update(id, updateExamDto, req.user.sub, req.user.institutionId);
+    return this.examsService.update(id, updateExamDto, req.user.sub, req.user.institutionId, req.user.role);
   }
 
   @Get('dashboard-stats')
@@ -71,14 +71,14 @@ export class ExamsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('LECTURER', 'ADMIN')
   findOne(@Param('id') id: string, @Request() req: any) {
-    return this.examsService.findOne(id, req.user.sub, req.user.institutionId);
+    return this.examsService.findOne(id, req.user.sub, req.user.institutionId, req.user.role);
   }
 
   @Patch(':id/publish')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('LECTURER', 'ADMIN')
   publish(@Param('id') id: string, @Request() req: any) {
-    return this.examsService.publish(id, req.user.sub);
+    return this.examsService.publish(id, req.user.sub, req.user.role);
   }
 
   @Patch(':id/archive')
@@ -100,7 +100,7 @@ export class ExamsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('LECTURER', 'ADMIN')
   remove(@Param('id') id: string, @Request() req: any) {
-    return this.examsService.remove(id, req.user.sub);
+    return this.examsService.remove(id, req.user.sub, req.user.role);
   }
 
   @Post('access/:accessCode/session')

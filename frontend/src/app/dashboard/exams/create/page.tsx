@@ -73,7 +73,28 @@ interface Exam {
   questions: Question[];
 }
 
+const safeParseOptions = (raw?: any): string[] => {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.map(String).map(s => s.trim()).filter(Boolean);
+  if (typeof raw !== 'string') return [];
+  const trimmed = raw.trim();
+  if (!trimmed) return [];
+  if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) return parsed.map(String).map(s => s.trim()).filter(Boolean);
+    } catch (e) {}
+  }
+  if (trimmed.includes('|||')) return trimmed.split('|||').map(s => s.trim()).filter(Boolean);
+  if (trimmed.includes('\n')) return trimmed.split('\n').map(s => s.trim()).filter(Boolean);
+  if (trimmed.includes(';')) return trimmed.split(';').map(s => s.trim()).filter(Boolean);
+  if (trimmed.includes(',')) return trimmed.split(',').map(s => s.trim()).filter(Boolean);
+  return [trimmed];
+};
+
 function CreateExamInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -92,7 +113,6 @@ function CreateExamInner() {
   // Test-case generator state: per-question
   type GenResult = { input: string; expectedOutput: string; success: boolean; error?: string; confirmed: boolean };
   const [tcGenerator, setTcGenerator] = useState<Record<number, { rawInputs: string; results: GenResult[]; phase: 'idle' | 'running' | 'preview' }>>({});
-
 
   // Initialize with current date and default times
   const today = new Date().toISOString().slice(0, 10);
@@ -131,9 +151,6 @@ function CreateExamInner() {
     questions: [],
   });
 
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
   const fetchExam = async (id: string, token: string) => {
     setFetchingExam(true);
     try {
@@ -166,7 +183,7 @@ function CreateExamInner() {
             title: q.title || '',
             problemStatement: q.problemStatement || '',
             marks: q.marks || 10,
-            options: q.options ? (typeof q.options === 'string' ? JSON.parse(q.options) : q.options) : [],
+            options: safeParseOptions(q.options),
           })),
         });
         setEditingId(id);
@@ -224,7 +241,7 @@ function CreateExamInner() {
       marks: item.marks,
       order: examData.questions.length + 1,
       referenceSolution: item.referenceSolution || '',
-      options: item.options ? JSON.parse(item.options) : [],
+      options: safeParseOptions(item.options),
       correctOption: item.correctOption || '',
       language: item.language || 'javascript',
       testCases: item.testCases
@@ -288,7 +305,7 @@ function CreateExamInner() {
       marks: item.marks,
       order: examData.questions.length + idx + 1,
       referenceSolution: item.referenceSolution || '',
-      options: item.options ? (typeof item.options === 'string' ? JSON.parse(item.options) : item.options) : [],
+      options: safeParseOptions(item.options),
       correctOption: item.correctOption || '',
       language: item.language || 'javascript',
       testCases: item.testCases
