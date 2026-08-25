@@ -1,113 +1,129 @@
-# Codexa - Secure Programming Examination Platform
+# 🚀 Codexa Online - Secure Programming Examination Platform
+
+[![Platform](https://img.shields.io/badge/Platform-Web%20%7C%20Cloud-orange.svg)](README.md)
+[![License](https://img.shields.io/badge/License-UNLICENSED-red.svg)](README.md)
 
 ## Overview
 
-Codexa is an enterprise-grade secure programming examination platform designed for universities and colleges. It provides a modern, secure, automated, and offline-capable system to replace paper-based programming exams.
+**Codexa Online** is the cloud-hosted online web version of the Codexa Programming Examination Platform. It allows lecturers to manage exams, monitor live student sessions remotely, and view automated grading reports via any modern browser.
 
-## Tech Stack
+---
 
-### Frontend
-- Next.js 14
-- React 18
-- TypeScript
-- Tailwind CSS
-- Monaco Editor
-- Framer Motion
+## 💻 Cross-Platform Step-by-Step Setup Guide
 
-### Backend
-- NestJS 10
-- TypeScript
-- PostgreSQL
-- Prisma ORM
-- Redis
-- Socket.IO
-- JWT Authentication
-- RBAC (Role-Based Access Control)
+Codexa Online can be developed and run on **Windows**, **Linux**, and **macOS**.
 
-### Execution Sandbox
-- Subprocess-based execution (Version 1)
-- Docker Containers (planned for later versions)
+---
 
-## Getting Started
+### 🪟 Windows Setup Guide
 
-### Prerequisites
-- Node.js 18+
-- Docker & Docker Compose
-- npm
+#### 1. Prerequisites (Windows)
+- **Node.js**: Download and install [Node.js 18 LTS or 20 LTS](https://nodejs.org/).
+- **Git**: Download and install [Git for Windows](https://git-scm.com/download/win).
 
-### Installation
+#### 2. Installation & Running
+1. Open **Command Prompt** or **PowerShell**:
+   ```cmd
+   git clone https://github.com/lioneladom/codexa_online.git
+   cd codexa_new
+   ```
+2. Setup Backend:
+   ```cmd
+   cd backend
+   npm install
+   npx prisma generate
+   npm run start:dev
+   ```
+3. Setup Frontend (in a new terminal window):
+   ```cmd
+   cd frontend
+   npm install
+   npm run dev
+   ```
+4. Open your browser and navigate to `http://localhost:3000`.
 
+---
+
+### 2. 🐧 Linux Setup Guide (Ubuntu / Debian / Fedora / Arch)
+
+#### 1. Prerequisites (Linux)
+```bash
+# Ubuntu / Debian
+sudo apt update
+sudo apt install -y nodejs npm git python3 build-essential
+
+# Fedora
+sudo dnf install -y nodejs npm git python3 gcc-c++
+```
+
+#### 2. Installation & Running
 1. Clone the repository:
+   ```bash
+   git clone https://github.com/lioneladom/codexa_online.git
+   cd codexa_new
+   ```
+2. Start Backend:
+   ```bash
+   cd backend
+   npm install
+   npx prisma generate
+   npm run start:dev
+   ```
+3. Start Frontend (in a new terminal window):
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+4. Access the web app at `http://localhost:3000`.
+
+---
+
+### 3. 🍎 macOS Setup Guide (Intel & Apple Silicon M1/M2/M3)
+
+#### 1. Prerequisites (macOS)
 ```bash
-git clone <repo-url>
-cd codexa
+brew install node git python3
 ```
 
-2. Start the development environment (PostgreSQL & Redis):
-```bash
-docker-compose up -d
-```
+#### 2. Installation & Running
+1. Open Terminal:
+   ```bash
+   git clone https://github.com/lioneladom/codexa_online.git
+   cd codexa_new
+   ```
+2. Start Backend:
+   ```bash
+   cd backend && npm install && npx prisma generate && npm run start:dev
+   ```
+3. Start Frontend (in another terminal tab):
+   ```bash
+   cd frontend && npm install && npm run dev
+   ```
+4. Open `http://localhost:3000` in Safari or Chrome.
 
-3. Install dependencies:
-```bash
-# Backend
-cd backend
-npm install
-npx prisma generate
-npx prisma db push
+---
 
-# Frontend
-cd ../frontend
-npm install
-```
+## 📄 Release Guide
 
-4. Start the services:
-```bash
-# Backend (in backend directory)
-npm run start:dev
+For step-by-step instructions on attaching release files and deployment assets on GitHub, check out:
+📄 **[Read the Full Release Guide (RELEASE_GUIDE.md)](RELEASE_GUIDE.md)**
 
-# Frontend (in frontend directory)
-npm run dev
-```
+---
 
-## Project Structure
+## 🏗️ Project Structure
 
 ```
-codexa/
-├── backend/
-│   ├── src/
-│   ├── prisma/
-│   ├── test/
-│   └── package.json
-├── frontend/
-│   ├── src/
-│   │   ├── app/
-│   │   ├── components/
-│   │   └── lib/
-│   └── package.json
-└── docker-compose.yml
+codexa_new/
+├── backend/            # NestJS REST & WebSocket API Server
+│   ├── src/            # Auth, Exams, Monitoring, Reports
+│   └── prisma/         # PostgreSQL schema & database migrations
+└── frontend/           # Next.js 14 Web Application
+    └── src/app/        # Entrance page, login, lecturer dashboard
 ```
 
-## Users & Roles
+---
 
-- **Lecturer**: Create, edit, review, publish exams, monitor students, view reports, export results
-- **Student**: Join exam sessions, take exams, write code, run code, submit answers, view results
-- **Invigilator**: Access monitoring dashboard, view live student activity, track warnings
-- **Admin**: Manage institutions, manage lecturers, manage users, configure deployment settings
+## 📄 License
 
-## Features
-
-- Exam Creation & Management
-- Secure Exam Delivery
-- Real-time Monitoring & Invigilation
-- Automated Grading
-- AST-based Code Analysis
-- Activity Logging
-- Anti-cheating System
-- Offline/LAN Deployment
-- Exportable Reports (Excel, HTML)
-- Dark/Light Mode
-
-## License
-
-UNLICENSED
+UNLICENSED - All rights reserved.
