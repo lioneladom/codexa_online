@@ -50,6 +50,13 @@ export default function DashboardPage() {
         }),
       ]);
 
+      if (examsRes.status === 401 || statsRes.status === 401) {
+        localStorage.removeItem('codexa_token');
+        localStorage.removeItem('codexa_user');
+        router.replace('/?session_expired=true');
+        return;
+      }
+
       if (examsRes.ok) {
         setExams(await examsRes.json());
       }

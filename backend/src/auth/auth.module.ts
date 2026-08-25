@@ -11,10 +11,10 @@ import { GoogleStrategy } from './google.strategy';
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET || 'your-secret-key',
-      signOptions: { expiresIn: '1d' },
+      signOptions: { expiresIn: '7d' },
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, GoogleStrategy],
+  providers: [AuthService],
 })
 export class AuthModule {}

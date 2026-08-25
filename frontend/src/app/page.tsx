@@ -16,6 +16,12 @@ export default function EntrancePage() {
   const router = useRouter();
 
   useEffect(() => {
+    // Check if session expired
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('session_expired') === 'true') {
+      setError('Your session has expired. Please sign in again.');
+    }
+
     // Silently wake up Render backend in background on page load to prevent cold-start delay
     const pingBackend = async () => {
       try {
@@ -32,10 +38,13 @@ export default function EntrancePage() {
     setLoading(true);
     setError('');
 
+    const cleanUsername = username.trim();
+    const cleanPassword = password.trim();
+
     try {
       if (role === 'invigilator') {
-        const accessCode = username.trim().toUpperCase();
-        const invigilatorKey = password.trim();
+        const accessCode = cleanUsername.toUpperCase();
+        const invigilatorKey = cleanPassword;
 
         const examRes = await fetch(`${getApiUrl()}/exams/access/${accessCode}`);
         if (!examRes.ok) {
@@ -57,8 +66,8 @@ export default function EntrancePage() {
       } else {
         const endpoint = isRegisterMode ? '/auth/register' : '/auth/login';
         const body = isRegisterMode 
-          ? { username, password, name: fullName } 
-          : { username, password };
+          ? { username: cleanUsername, password: cleanPassword, name: fullName.trim() } 
+          : { username: cleanUsername, password: cleanPassword };
 
         const res = await fetch(`${getApiUrl()}${endpoint}`, {
           method: 'POST',
@@ -68,7 +77,7 @@ export default function EntrancePage() {
 
         if (!res.ok) {
           const data = await res.json();
-          throw new Error(data.message || 'Something went wrong');
+          throw new Error(data.message || 'Authentication failed. Please check your credentials.');
         }
 
         const data = await res.json();
@@ -77,7 +86,7 @@ export default function EntrancePage() {
         router.push('/dashboard');
       }
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Connection error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -194,7 +203,7 @@ export default function EntrancePage() {
 
           <button
             type="submit"
-            disabled={loading || googleLoading}
+            disabled={loading}
             className="w-full bg-[#bf4507] hover:bg-[#c24709] text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-[0_4px_20px_rgba(191,69,7,0.3)] active:scale-[0.98] disabled:opacity-50 text-sm tracking-wide mt-2"
           >
             {loading ? 'Authenticating...' : (role === 'invigilator' ? 'Enter Operations Center' : (isRegisterMode ? 'Create Account' : 'Sign In'))}

@@ -15,9 +15,15 @@ export class AuthService {
 
   async register(registerDto: RegisterDto) {
     const { username, password, name, institutionId } = registerDto;
+    const cleanUsername = username ? username.trim() : '';
 
-    const existingUser = await this.prisma.user.findUnique({
-      where: { username },
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: cleanUsername },
+          { username: { equals: cleanUsername, mode: 'insensitive' } },
+        ],
+      },
     });
 
     if (existingUser) {
@@ -28,9 +34,9 @@ export class AuthService {
 
     const user = await this.prisma.user.create({
       data: {
-        username,
+        username: cleanUsername,
         password: hashedPassword,
-        name,
+        name: name ? name.trim() : '',
         institutionId,
       },
     });
@@ -46,10 +52,20 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const { username, password } = loginDto;
+    const cleanUsername = username ? username.trim() : '';
 
-    const user = await this.prisma.user.findUnique({
-      where: { username },
+    // First try exact match, then try case-insensitive match for existing users
+    let user = await this.prisma.user.findUnique({
+      where: { username: cleanUsername },
     });
+
+    if (!user) {
+      user = await this.prisma.user.findFirst({
+        where: {
+          username: { equals: cleanUsername, mode: 'insensitive' },
+        },
+      });
+    }
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');

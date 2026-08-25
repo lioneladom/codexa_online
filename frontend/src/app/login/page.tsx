@@ -12,11 +12,16 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
 
   useEffect(() => {
+    // Check if session expired
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('session_expired') === 'true') {
+      setError('Your session has expired. Please sign in again.');
+    }
+
     // Background ping to wake up Render backend container immediately
     const pingBackend = async () => {
       try {
@@ -26,41 +31,20 @@ export default function LoginPage() {
       }
     };
     pingBackend();
-
-    // Check if returning from Google OAuth redirect
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
-    const userStr = params.get('user');
-    const oauthError = params.get('error');
-    const oauthDetail = params.get('detail');
-
-    if (oauthError) {
-      setError(oauthDetail ? `Google Sign-In Error: ${oauthDetail}` : 'Google Sign-In failed or was cancelled. Please try again.');
-    }
-
-    if (token && userStr) {
-      try {
-        const user = decodeURIComponent(userStr);
-        localStorage.setItem('codexa_token', token);
-        localStorage.setItem('codexa_user', user);
-        
-        window.history.replaceState({}, document.title, window.location.pathname);
-        router.push('/dashboard');
-      } catch (err) {
-        console.error('Failed to parse Google OAuth user data', err);
-      }
-    }
-  }, [router]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
+    const cleanUsername = username.trim();
+    const cleanPassword = password.trim();
+
     try {
       if (role === 'invigilator') {
-        const accessCode = username.trim().toUpperCase();
-        const invigilatorKey = password.trim();
+        const accessCode = cleanUsername.toUpperCase();
+        const invigilatorKey = cleanPassword;
 
         const examRes = await fetch(`${getApiUrl()}/exams/access/${accessCode}`);
         if (!examRes.ok) {
@@ -82,8 +66,8 @@ export default function LoginPage() {
       } else {
         const endpoint = isRegisterMode ? '/auth/register' : '/auth/login';
         const body = isRegisterMode 
-          ? { username, password, name: fullName } 
-          : { username, password };
+          ? { username: cleanUsername, password: cleanPassword, name: fullName.trim() } 
+          : { username: cleanUsername, password: cleanPassword };
 
         const res = await fetch(`${getApiUrl()}${endpoint}`, {
           method: 'POST',
@@ -93,7 +77,7 @@ export default function LoginPage() {
 
         if (!res.ok) {
           const data = await res.json();
-          throw new Error(data.message || 'Something went wrong');
+          throw new Error(data.message || 'Authentication failed. Please check your credentials.');
         }
 
         const data = await res.json();
@@ -102,7 +86,7 @@ export default function LoginPage() {
         router.push('/dashboard');
       }
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Connection error. Please try again.');
     } finally {
       setLoading(false);
     }
